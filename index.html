@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Camera Experiment - Filtres Vidéo Temps Réel</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu,
+          Cantarell, sans-serif;
+        background-color: #000;
+        color: #fff;
+        overflow: hidden;
+      }
+
+      #canvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        display: block;
+      }
+
+      /* Settings Overlay */
+      .settings-overlay {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+        transition:
+          opacity 0.3s ease,
+          transform 0.3s ease;
+      }
+
+      .settings-overlay.hidden {
+        opacity: 0;
+        transform: translateY(-20px);
+        pointer-events: none;
+      }
+
+      .gear-button {
+        background: rgba(0, 0, 0, 0.7);
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        border-radius: 50%;
+        width: 56px;
+        height: 56px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        color: #fff;
+        backdrop-filter: blur(10px);
+      }
+
+      .gear-button:hover {
+        background: rgba(0, 0, 0, 0.9);
+        border-color: rgba(255, 255, 255, 0.5);
+        transform: rotate(90deg);
+      }
+
+      .settings-panel {
+        position: absolute;
+        top: 70px;
+        right: 0;
+        background: rgba(0, 0, 0, 0.9);
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        border-radius: 12px;
+        padding: 20px;
+        min-width: 300px;
+        backdrop-filter: blur(20px);
+        transform: translateY(-20px);
+        opacity: 0;
+        pointer-events: none;
+        transition: all 0.3s ease;
+      }
+
+      .settings-panel.open {
+        transform: translateY(0);
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .settings-panel h3 {
+        margin: 0 0 15px 0;
+        font-size: 18px;
+        color: #fff;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        padding-bottom: 10px;
+      }
+
+      .setting-group {
+        margin-bottom: 15px;
+      }
+
+      .setting-group > label {
+        display: block;
+        margin-bottom: 5px;
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.8);
+      }
+
+      .setting-control {
+        width: 100%;
+        padding: 8px 12px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 6px;
+        color: #fff;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .setting-control:hover {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: rgba(255, 255, 255, 0.3);
+      }
+
+      .setting-control:focus {
+        outline: none;
+        border-color: #667eea;
+        background: rgba(255, 255, 255, 0.15);
+      }
+
+      select.setting-control {
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23fff' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 10px center;
+        padding-right: 35px;
+      }
+
+      select.setting-control option {
+        background: #2a2a2a;
+        color: #fff;
+      }
+
+      button.setting-control {
+        background: rgba(102, 126, 234, 0.3);
+        border-color: #667eea;
+        margin-top: 5px;
+      }
+
+      button.setting-control:hover {
+        background: rgba(102, 126, 234, 0.5);
+      }
+
+      input[type="checkbox"] {
+        width: auto;
+        margin-right: 8px;
+        cursor: pointer;
+      }
+
+      .radio-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 8px 0;
+      }
+
+      .radio-group label {
+        display: flex;
+        align-items: center;
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.8);
+        cursor: pointer;
+      }
+
+      .radio-group input[type="radio"] {
+        margin-right: 8px;
+        cursor: pointer;
+      }
+
+      /* Language flags */
+      .language-selector {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        padding: 10px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        margin-bottom: 15px;
+      }
+
+      .flag-button {
+        background: rgba(255, 255, 255, 0.1);
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+        width: 60px;
+        height: 40px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+      }
+
+      .flag-button .flag {
+        font-size: 24px;
+        line-height: 1;
+      }
+
+      .flag-button:hover {
+        background: rgba(255, 255, 255, 0.2);
+        border-color: rgba(255, 255, 255, 0.4);
+        transform: scale(1.05);
+      }
+
+      .flag-button.active {
+        background: rgba(102, 126, 234, 0.3);
+        border-color: #667eea;
+        box-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
+      }
+
+      /* Loading/Error messages */
+      #status-message {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.9);
+        padding: 30px 40px;
+        border-radius: 12px;
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        text-align: center;
+        z-index: 999;
+        display: none;
+      }
+
+      #status-message.show {
+        display: block;
+      }
+
+      #status-message.error {
+        border-color: #f44336;
+      }
+
+      #status-message h2 {
+        margin: 0 0 10px 0;
+        font-size: 20px;
+      }
+
+      #status-message p {
+        margin: 0;
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 14px;
+      }
+
+      #status-message button {
+        margin-top: 15px;
+        padding: 10px 20px;
+        background: #667eea;
+        border: none;
+        border-radius: 6px;
+        color: white;
+        font-size: 14px;
+        cursor: pointer;
+        transition: background 0.2s ease;
+      }
+
+      #status-message button:hover {
+        background: #5568d3;
+      }
+
+      #status-message .help-text {
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid rgba(255, 255, 255, 0.2);
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.5);
+        line-height: 1.5;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="canvas"></canvas>
+
+    <div id="status-message">
+      <h2 id="status-title">Chargement...</h2>
+      <p id="status-text">Initialisation de la webcam</p>
+      <button id="retry-button" style="display: none">Réessayer</button>
+      <div id="help-text" class="help-text" style="display: none"></div>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
