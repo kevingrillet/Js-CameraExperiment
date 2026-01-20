@@ -1,0 +1,9 @@
+{
+  "recommendations": [
+    "DavidAnson.vscode-markdownlint",
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "shardulm94.trailing-spaces",
+    "spywhere.guides"
+  ]
+}

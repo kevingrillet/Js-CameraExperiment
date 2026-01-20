@@ -1,0 +1,57 @@
+{
+  "name": "js-camera-experiment",
+  "version": "0.1.0",
+  "description": "Experiment with camera in JavaScript/TypeScript",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint . --ext .ts,.tsx",
+    "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "lint:md": "markdownlint \"**/*.md\" --ignore node_modules",
+    "lint:md:fix": "markdownlint \"**/*.md\" --ignore node_modules --fix",
+    "format": "prettier --write \"src/**/*.{ts,tsx,json,css,html}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,json,css,html}\"",
+    "validate": "npm run type-check && npm run lint && npm run lint:md && npm run format:check",
+    "prepare": "husky"
+  },
+  "keywords": [
+    "camera",
+    "mediastream",
+    "video-filters",
+    "canvas",
+    "typescript"
+  ],
+  "author": "",
+  "license": "GNU GPLv3",
+  "devDependencies": {
+    "@eslint/js": "9.39.2",
+    "@types/node": "^20.11.0",
+    "@typescript-eslint/eslint-plugin": "^8.21.0",
+    "@typescript-eslint/parser": "^8.21.0",
+    "eslint": "^9.18.0",
+    "eslint-config-prettier": "^9.1.0",
+    "husky": "^9.0.0",
+    "lint-staged": "^15.2.0",
+    "markdownlint-cli": "0.47.0",
+    "prettier": "^3.2.0",
+    "typescript": "^5.3.3",
+    "typescript-eslint": "8.53.1",
+    "vite": "7.3.1"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,css,html}": [
+      "prettier --write"
+    ],
+    "*.md": [
+      "markdownlint --fix"
+    ]
+  }
+}
