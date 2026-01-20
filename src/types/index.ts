@@ -8,7 +8,8 @@ export type FilterType =
   | "motion"
   | "pixelate"
   | "crt"
-  | "rotoscope";
+  | "rotoscope"
+  | "edge";
 
 export type SourceType = "webcam" | "image";
 
@@ -25,28 +26,15 @@ export interface AppConfig {
 }
 
 export interface FilterMetadata {
-  name: string;
   type: FilterType;
-  description: string;
 }
 
 export const AVAILABLE_FILTERS: FilterMetadata[] = [
-  { name: "Aucun", type: "none", description: "Pas de filtre" },
-  { name: "Inversé", type: "invert", description: "Couleurs inversées" },
-  {
-    name: "Détection de mouvement",
-    type: "motion",
-    description: "Heatmap de mouvement",
-  },
-  {
-    name: "Pixelisé (Game Boy)",
-    type: "pixelate",
-    description: "Style rétro pixelisé",
-  },
-  { name: "CRT", type: "crt", description: "Effet écran cathodique" },
-  {
-    name: "Rotoscopie",
-    type: "rotoscope",
-    description: "Effet cartoon/dessin animé",
-  },
+  { type: "none" },
+  { type: "invert" },
+  { type: "motion" },
+  { type: "pixelate" },
+  { type: "crt" },
+  { type: "rotoscope" },
+  { type: "edge" },
 ];

@@ -27,6 +27,7 @@ export interface Translations {
     pixelate: string;
     crt: string;
     rotoscope: string;
+    edge: string;
   };
   errors: {
     accessDenied: string;
@@ -69,6 +70,7 @@ export const translations: Record<Language, Translations> = {
       pixelate: "Pixelisé (Game Boy)",
       crt: "CRT",
       rotoscope: "Rotoscopie",
+      edge: "Détection de contours",
     },
     errors: {
       accessDenied:
@@ -114,6 +116,7 @@ export const translations: Record<Language, Translations> = {
       pixelate: "Pixelated (Game Boy)",
       crt: "CRT",
       rotoscope: "Rotoscope",
+      edge: "Edge Detection",
     },
     errors: {
       accessDenied:

@@ -37,6 +37,7 @@ Application web TypeScript utilisant Canvas 2D pour appliquer des filtres visuel
   - Pixelisé (style Game Boy rétro)
   - CRT (effet écran cathodique)
   - Rotoscope (effet cartoon/dessin animé avec quantification des couleurs et détection de contours)
+  - Détection de contours (edge detection avec fond noir et contours blancs)
 - Interface utilisateur :
   - Canvas plein écran
   - Overlay avec icône engrenage (auto-hide quand souris sort de la fenêtre)
@@ -222,6 +223,11 @@ Application web TypeScript utilisant Canvas 2D pour appliquer des filtres visuel
   - Action: Appliquer quantification des couleurs (réduction à 16 niveaux) puis détection de contours avec opérateur Sobel pour effet cartoon/dessin animé
   - Notes: Posterisation des couleurs en premier, puis assombrissement des pixels aux contours détectés
 
+- [ ] **Task 10c**: Implémenter EdgeDetectionFilter
+  - File: `src/filters/EdgeDetectionFilter.ts`
+  - Action: Appliquer l'opérateur Sobel (gradients Gx et Gy) pour détecter les contours, afficher en blanc sur fond noir
+  - Notes: Seuil de magnitude configurable (50 par défaut), conversion en niveaux de gris avant calcul des gradients
+
 #### Phase 4: Interface Utilisateur
 
 - [ ] **Task 11**: Créer le SettingsOverlay avec auto-hide
@@ -262,6 +268,7 @@ Application web TypeScript utilisant Canvas 2D pour appliquer des filtres visuel
 - [ ] **AC9**: Given le filtre "Pixelisé" est sélectionné, when le flux vidéo est affiché, then l'image est pixelisée avec la palette 4 couleurs verte style Game Boy
 - [ ] **AC10**: Given le filtre "CRT" est sélectionné, when le flux vidéo est affiché, then des scanlines horizontales sont visibles et l'image a un léger effet de bloom
 - [ ] **AC10b**: Given le filtre "Rotoscopie" est sélectionné, when le flux vidéo est affiché, then l'image a un effet cartoon avec des couleurs réduites et des contours marqués en noir
+- [ ] **AC10c**: Given le filtre "Détection de contours" est sélectionné, when le flux vidéo est affiché, then seuls les contours sont visibles en blanc sur fond noir avec l'opérateur Sobel
 
 #### Interface Utilisateur
 

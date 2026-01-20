@@ -16,6 +16,7 @@ import { MotionDetectionFilter } from "./filters/MotionDetectionFilter";
 import { PixelateFilter } from "./filters/PixelateFilter";
 import { CRTFilter } from "./filters/CRTFilter";
 import { RotoscopeFilter } from "./filters/RotoscopeFilter";
+import { EdgeDetectionFilter } from "./filters/EdgeDetectionFilter";
 
 import type { FilterType } from "./types";
 import type { Filter } from "./filters/Filter";
@@ -40,6 +41,7 @@ class App {
       ["pixelate", new PixelateFilter()],
       ["crt", new CRTFilter()],
       ["rotoscope", new RotoscopeFilter()],
+      ["edge", new EdgeDetectionFilter()],
     ]);
 
     // Get canvas element

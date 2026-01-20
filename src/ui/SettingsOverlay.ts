@@ -47,6 +47,17 @@ export class SettingsOverlay {
     overlay.className = "settings-overlay";
     const t = I18n.t();
 
+    // Sort filters: "none" first, then alphabetically by translated name
+    const sortedFilters = [...AVAILABLE_FILTERS].sort((a, b) => {
+      if (a.type === "none") {
+        return -1;
+      }
+      if (b.type === "none") {
+        return 1;
+      }
+      return t.filters[a.type].localeCompare(t.filters[b.type]);
+    });
+
     overlay.innerHTML = `
       <button class="gear-button" title="${t.settings}">
         <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
@@ -78,9 +89,11 @@ export class SettingsOverlay {
         <div class="setting-group">
           <label>${t.filter}</label>
           <select id="filter-select" class="setting-control">
-            ${AVAILABLE_FILTERS.map(
-              (f) => `<option value="${f.type}">${t.filters[f.type]}</option>`
-            ).join("")}
+            ${sortedFilters
+              .map(
+                (f) => `<option value="${f.type}">${t.filters[f.type]}</option>`
+              )
+              .join("")}
           </select>
         </div>
 
@@ -311,8 +324,10 @@ export class SettingsOverlay {
       title.textContent = t.settings;
     }
 
-    // Update labels
-    const labels = this.panel.querySelectorAll(".setting-group > label");
+    // Update labels (only those that are direct label elements, not containing inputs)
+    const labels = this.panel.querySelectorAll(
+      ".setting-group > label:not(:has(input))"
+    );
     if (labels[0] !== undefined) {
       labels[0].textContent = t.videoSource;
     }
@@ -359,16 +374,35 @@ export class SettingsOverlay {
       radioLabels[1].appendChild(document.createTextNode(t.cover));
     }
 
-    // Update filter options
+    // Update filter options and re-sort them
     const filterSelect = this.panel.querySelector(
       "#filter-select"
     ) as HTMLSelectElement;
     if (filterSelect !== null) {
-      AVAILABLE_FILTERS.forEach((f, index): void => {
-        if (filterSelect.options[index] !== undefined) {
-          filterSelect.options[index].textContent = t.filters[f.type];
+      const currentValue = filterSelect.value;
+
+      // Sort filters: "none" first, then alphabetically by translated name
+      const sortedFilters = [...AVAILABLE_FILTERS].sort((a, b) => {
+        if (a.type === "none") {
+          return -1;
         }
+        if (b.type === "none") {
+          return 1;
+        }
+        return t.filters[a.type].localeCompare(t.filters[b.type]);
       });
+
+      // Clear and rebuild options
+      filterSelect.innerHTML = "";
+      sortedFilters.forEach((f): void => {
+        const option = document.createElement("option");
+        option.value = f.type;
+        option.textContent = t.filters[f.type];
+        filterSelect.appendChild(option);
+      });
+
+      // Restore selection
+      filterSelect.value = currentValue;
     }
   }
 }
