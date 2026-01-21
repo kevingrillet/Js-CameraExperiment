@@ -17,6 +17,8 @@ import { PixelateFilter } from "./filters/PixelateFilter";
 import { CRTFilter } from "./filters/CRTFilter";
 import { RotoscopeFilter } from "./filters/RotoscopeFilter";
 import { EdgeDetectionFilter } from "./filters/EdgeDetectionFilter";
+import { NightVisionFilter } from "./filters/NightVisionFilter";
+import { VHSFilter } from "./filters/VHSFilter";
 
 import type { FilterType } from "./types";
 import type { Filter } from "./filters/Filter";
@@ -42,6 +44,8 @@ class App {
       ["crt", new CRTFilter()],
       ["rotoscope", new RotoscopeFilter()],
       ["edge", new EdgeDetectionFilter()],
+      ["nightvision", new NightVisionFilter()],
+      ["vhs", new VHSFilter()],
     ]);
 
     // Get canvas element

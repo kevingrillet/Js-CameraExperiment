@@ -28,6 +28,8 @@ export interface Translations {
     crt: string;
     rotoscope: string;
     edge: string;
+    nightvision: string;
+    vhs: string;
   };
   errors: {
     accessDenied: string;
@@ -71,6 +73,8 @@ export const translations: Record<Language, Translations> = {
       crt: "CRT",
       rotoscope: "Rotoscopie",
       edge: "Détection de contours",
+      nightvision: "Vision nocturne",
+      vhs: "VHS Vintage",
     },
     errors: {
       accessDenied:
@@ -117,6 +121,8 @@ export const translations: Record<Language, Translations> = {
       crt: "CRT",
       rotoscope: "Rotoscope",
       edge: "Edge Detection",
+      nightvision: "Night Vision",
+      vhs: "VHS Vintage",
     },
     errors: {
       accessDenied:

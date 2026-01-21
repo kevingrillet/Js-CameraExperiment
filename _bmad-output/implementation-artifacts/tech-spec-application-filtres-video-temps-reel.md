@@ -38,6 +38,8 @@ Application web TypeScript utilisant Canvas 2D pour appliquer des filtres visuel
   - CRT (effet écran cathodique)
   - Rotoscope (effet cartoon/dessin animé avec quantification des couleurs et détection de contours)
   - Détection de contours (edge detection avec fond noir et contours blancs)
+  - Vision nocturne (teinte verte, grain, vignettage pour effet amplification de lumière)
+  - VHS (défauts aléatoires, tracking lines, color bleeding, grain vintage)
 - Interface utilisateur :
   - Canvas plein écran
   - Overlay avec icône engrenage (auto-hide quand souris sort de la fenêtre)
@@ -228,6 +230,16 @@ Application web TypeScript utilisant Canvas 2D pour appliquer des filtres visuel
   - Action: Appliquer l'opérateur Sobel (gradients Gx et Gy) pour détecter les contours, afficher en blanc sur fond noir
   - Notes: Seuil de magnitude configurable (50 par défaut), conversion en niveaux de gris avant calcul des gradients
 
+- [ ] **Task 10d**: Implémenter NightVisionFilter
+  - File: `src/filters/NightVisionFilter.ts`
+  - Action: Créer un effet vision nocturne avec conversion en niveaux de gris, boost de luminosité (1.5x), teinte verte (0.1R, 1.0G, 0.1B), grain/bruit (15% d'intensité), et vignettage radial (40% de darkening aux bords)
+  - Notes: Utiliser la formule de luminance (0.299R + 0.587G + 0.114B), appliquer le grain avec Math.random(), calculer le vignettage avec la distance au centre
+
+- [ ] **Task 10e**: Implémenter VHSFilter
+  - File: `src/filters/VHSFilter.ts`
+  - Action: Créer un effet VHS vintage avec défauts aléatoires (2% de chance de glitch par frame), tracking lines horizontales (15% de probabilité), color bleeding horizontal (blur sur R/B), désaturation partielle (85%), et grain (8% d'intensité)
+  - Notes: Implémenter addTrackingLine() pour lignes de bruit horizontal, addGlitch() pour décalages de lignes aléatoires, appliquer le color bleeding par moyenne avec le pixel précédent
+
 #### Phase 4: Interface Utilisateur
 
 - [ ] **Task 11**: Créer le SettingsOverlay avec auto-hide
@@ -269,6 +281,8 @@ Application web TypeScript utilisant Canvas 2D pour appliquer des filtres visuel
 - [ ] **AC10**: Given le filtre "CRT" est sélectionné, when le flux vidéo est affiché, then des scanlines horizontales sont visibles et l'image a un léger effet de bloom
 - [ ] **AC10b**: Given le filtre "Rotoscopie" est sélectionné, when le flux vidéo est affiché, then l'image a un effet cartoon avec des couleurs réduites et des contours marqués en noir
 - [ ] **AC10c**: Given le filtre "Détection de contours" est sélectionné, when le flux vidéo est affiché, then seuls les contours sont visibles en blanc sur fond noir avec l'opérateur Sobel
+- [ ] **AC10d**: Given le filtre "Vision nocturne" est sélectionné, when le flux vidéo est affiché, then l'image a une teinte verte caractéristique avec grain et vignettage, simulant un dispositif d'amplification de lumière
+- [ ] **AC10e**: Given le filtre "VHS" est sélectionné, when le flux vidéo est affiché, then l'image a un effet vintage avec grain, color bleeding, et défauts/glitches aléatoires intermittents (tracking lines, décalages horizontaux)
 
 #### Interface Utilisateur
 

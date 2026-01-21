@@ -9,7 +9,9 @@ export type FilterType =
   | "pixelate"
   | "crt"
   | "rotoscope"
-  | "edge";
+  | "edge"
+  | "nightvision"
+  | "vhs";
 
 export type SourceType = "webcam" | "image";
 
@@ -37,4 +39,6 @@ export const AVAILABLE_FILTERS: FilterMetadata[] = [
   { type: "crt" },
   { type: "rotoscope" },
   { type: "edge" },
+  { type: "nightvision" },
+  { type: "vhs" },
 ];
