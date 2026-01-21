@@ -7,7 +7,7 @@ import { FPSCounter } from "./FPSCounter";
 import { VideoSource } from "../video/VideoSource";
 import { Logger } from "../utils/Logger";
 import { I18n } from "../i18n/translations";
-import type { AspectRatioMode } from "../types";
+import type { AspectRatioMode, FilterType } from "../types";
 
 export class RenderPipeline {
   private canvas: HTMLCanvasElement;
@@ -25,6 +25,8 @@ export class RenderPipeline {
   private consecutiveErrors: number = 0;
   private readonly MAX_CONSECUTIVE_ERRORS = 10;
   private onErrorCallback?: (error: Error) => void;
+  private isPaused: boolean = false;
+  private currentFilterType: FilterType = "none";
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -79,8 +81,11 @@ export class RenderPipeline {
   /**
    * Change the active filter
    * @param filter - The new filter to apply
+   * @param filterType - Type of the filter for tracking
    */
-  setFilter(filter: Filter): void {
+  setFilter(filter: Filter, filterType: FilterType): void {
+    this.currentFilterType = filterType;
+
     // Cleanup old filter if it has cleanup method
     if (this.currentFilter.cleanup !== undefined) {
       try {
@@ -120,6 +125,71 @@ export class RenderPipeline {
       return; // Already running
     }
     this.render();
+  }
+
+  /**
+   * Pause the render loop
+   */
+  pause(): void {
+    if (this.isPaused) {
+      return; // Already paused
+    }
+
+    if (this.animationId !== null) {
+      cancelAnimationFrame(this.animationId);
+      this.animationId = null;
+    }
+
+    this.isPaused = true;
+    // Intentionally reset error counter: user-initiated pause is a control action
+    // that warrants a fresh start. Previous errors may have been transient issues
+    // that the user is attempting to resolve by pausing/resuming.
+    this.consecutiveErrors = 0;
+    Logger.info("Render pipeline paused", "RenderPipeline");
+  }
+
+  /**
+   * Resume the render loop
+   */
+  resume(): void {
+    if (!this.isPaused) {
+      return; // Not paused
+    }
+
+    this.isPaused = false;
+
+    // Note: We do NOT call cleanup() on resume because:
+    // - Most filters are stateless (Invert, Pixelate, CRT, etc.) and don't have cleanup()
+    // - MotionDetectionFilter needs to keep its reference buffer to avoid false positives
+    // - Calling cleanup() would deallocate buffers only to reallocate them immediately
+    // The filter will naturally adapt to the resumed frame on next render cycle.
+
+    this.render();
+    Logger.info("Render pipeline resumed", "RenderPipeline");
+  }
+
+  /**
+   * Get pause state
+   * @returns True if render pipeline is paused
+   */
+  getIsPaused(): boolean {
+    return this.isPaused;
+  }
+
+  /**
+   * Get canvas element
+   * @returns The canvas element being rendered to
+   */
+  getCanvas(): HTMLCanvasElement {
+    return this.canvas;
+  }
+
+  /**
+   * Get current filter type
+   * @returns The currently active filter type
+   */
+  getCurrentFilterType(): FilterType {
+    return this.currentFilterType;
   }
 
   stop(): void {
@@ -322,15 +392,15 @@ export class RenderPipeline {
   }
 
   private drawFPS(): void {
-    const fps = this.fpsCounter.getFPS();
-
     this.ctx.save();
     this.ctx.font = "bold 24px monospace";
     this.ctx.fillStyle = "#00ff00";
     this.ctx.strokeStyle = "#000000";
     this.ctx.lineWidth = 3;
 
-    const text = `${fps} FPS`;
+    const text = this.isPaused
+      ? I18n.t().paused
+      : `${this.fpsCounter.getFPS()} FPS`;
     const x = 20;
     const y = this.canvas.height - 20;
 

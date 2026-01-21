@@ -1,6 +1,6 @@
 {
   "name": "js-camera-experiment",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Experiment with camera in JavaScript/TypeScript",
   "main": "dist/index.js",
   "type": "module",

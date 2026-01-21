@@ -20,6 +20,10 @@ export interface Translations {
   changingWebcam: string;
   loadingImage: string;
   noWebcamAvailable: string;
+  download: string;
+  downloadImage: string;
+  paused: string;
+  clickToResume: string;
   filters: {
     none: string;
     invert: string;
@@ -42,6 +46,8 @@ export interface Translations {
     fileTooLarge: string;
     invalidFileType: string;
     renderError: string;
+    downloadFailed: string;
+    quotaExceeded: string;
   };
   help: {
     permissionInstructions: string;
@@ -68,6 +74,10 @@ export const translations: Record<Language, Translations> = {
     changingWebcam: "Changement de webcam",
     loadingImage: "Chargement de l'image",
     noWebcamAvailable: "Aucune webcam disponible",
+    download: "Télécharger",
+    downloadImage: "Télécharger l'image",
+    paused: "EN PAUSE",
+    clickToResume: "Cliquez pour reprendre",
     filters: {
       none: "Aucun",
       invert: "Inversé",
@@ -92,6 +102,8 @@ export const translations: Record<Language, Translations> = {
       fileTooLarge: "Fichier trop volumineux. Taille maximale : {size}MB.",
       invalidFileType: "Type de fichier invalide. Veuillez charger une image.",
       renderError: "Erreur de rendu : {message}",
+      downloadFailed: "Échec du téléchargement : {message}",
+      quotaExceeded: "Espace de stockage insuffisant",
     },
     help: {
       permissionInstructions:
@@ -119,6 +131,10 @@ export const translations: Record<Language, Translations> = {
     changingWebcam: "Switching webcam",
     loadingImage: "Loading image",
     noWebcamAvailable: "No webcam available",
+    download: "Download",
+    downloadImage: "Download Image",
+    paused: "PAUSED",
+    clickToResume: "Click to resume",
     filters: {
       none: "None",
       invert: "Inverted",
@@ -143,6 +159,8 @@ export const translations: Record<Language, Translations> = {
       fileTooLarge: "File too large. Maximum size: {size}MB.",
       invalidFileType: "Invalid file type. Please upload an image file.",
       renderError: "Render error: {message}",
+      downloadFailed: "Download failed: {message}",
+      quotaExceeded: "Insufficient storage space",
     },
     help: {
       permissionInstructions:

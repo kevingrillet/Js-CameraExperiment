@@ -10,6 +10,7 @@ import { SettingsOverlay } from "./ui/SettingsOverlay";
 import { GitHubCorner } from "./ui/GitHubCorner";
 import { I18n, type Language } from "./i18n/translations";
 import { Logger } from "./utils/Logger";
+import { CanvasCapture } from "./utils/CanvasCapture";
 
 // Import all filters
 import { NoneFilter } from "./filters/NoneFilter";
@@ -32,6 +33,9 @@ class App {
   private settingsOverlay: SettingsOverlay;
   private filters: Map<FilterType, Filter>;
   private currentWebcamDeviceId: string | undefined;
+  private isDownloading: boolean = false;
+  private keyboardHandler: ((event: KeyboardEvent) => void) | null = null;
+  private canvasClickHandler: ((event: MouseEvent) => void) | null = null;
 
   constructor() {
     // Initialize core components
@@ -93,10 +97,28 @@ class App {
         this.renderPipeline.setAspectRatioMode(mode),
       onLanguageChanged: (lang: Language): void =>
         this.handleLanguageChanged(lang),
+      onDownloadClicked: (): void => {
+        void this.handleDownloadClick();
+      },
     });
 
     // Initialize GitHub Corner
     new GitHubCorner("https://github.com/kevingrillet/Js-CameraExperiment");
+
+    // Setup pause/play event listeners
+    // Canvas click handler for pause/play
+    this.canvasClickHandler = (event: MouseEvent): void => {
+      if (event.target === canvas) {
+        this.togglePause();
+      }
+    };
+    canvas.addEventListener("click", this.canvasClickHandler);
+
+    // Keyboard handler for shortcuts
+    this.keyboardHandler = (event: KeyboardEvent): void => {
+      this.handleKeyDown(event);
+    };
+    document.addEventListener("keydown", this.keyboardHandler);
 
     // Start the application
     void this.start();
@@ -241,7 +263,95 @@ class App {
       return;
     }
 
-    this.renderPipeline.setFilter(filter);
+    this.renderPipeline.setFilter(filter, filterType);
+  }
+
+  private async handleDownloadClick(): Promise<void> {
+    if (this.isDownloading) {
+      return;
+    }
+
+    const t = I18n.t();
+    this.isDownloading = true;
+    this.settingsOverlay.setDownloadEnabled(false);
+
+    try {
+      const canvas = this.renderPipeline.getCanvas();
+      const filterType = this.renderPipeline.getCurrentFilterType();
+      const filename = CanvasCapture.generateFilename(filterType);
+
+      await CanvasCapture.captureCanvas(canvas, filename);
+
+      Logger.info(`Image downloaded: ${filename}`, "App");
+    } catch (error) {
+      Logger.error(
+        "Download failed",
+        error instanceof Error ? error : new Error(String(error)),
+        "App"
+      );
+      const errorMessage =
+        error instanceof Error ? error.message : t.errors.generic;
+      this.showStatus(
+        t.errors.downloadFailed.replace("{message}", ""),
+        errorMessage,
+        true
+      );
+    } finally {
+      this.isDownloading = false;
+      this.settingsOverlay.setDownloadEnabled(true);
+    }
+  }
+
+  private togglePause(): void {
+    const pauseOverlay = document.getElementById("pause-overlay");
+    if (pauseOverlay === null) {
+      return;
+    }
+
+    if (this.renderPipeline.getIsPaused()) {
+      this.renderPipeline.resume();
+      pauseOverlay.classList.add("hidden");
+    } else {
+      this.renderPipeline.pause();
+      pauseOverlay.classList.remove("hidden");
+    }
+  }
+
+  private handleKeyDown(event: KeyboardEvent): void {
+    // Ignore if typing in input field or contenteditable element
+    if (
+      event.target instanceof HTMLInputElement ||
+      event.target instanceof HTMLTextAreaElement ||
+      (event.target instanceof HTMLElement && event.target.isContentEditable)
+    ) {
+      return;
+    }
+
+    // Spacebar for pause/play
+    if (event.key === " ") {
+      event.preventDefault();
+      this.togglePause();
+    }
+
+    // S key for download (only if not already downloading)
+    if ((event.key === "s" || event.key === "S") && !this.isDownloading) {
+      void this.handleDownloadClick();
+    }
+  }
+
+  public cleanup(): void {
+    // Remove keyboard listener
+    if (this.keyboardHandler !== null) {
+      document.removeEventListener("keydown", this.keyboardHandler);
+      this.keyboardHandler = null;
+    }
+
+    // Remove canvas click listener
+    if (this.canvasClickHandler !== null) {
+      const canvas = this.renderPipeline.getCanvas();
+      canvas.removeEventListener("click", this.canvasClickHandler);
+      this.canvasClickHandler = null;
+    }
   }
 
   private handleLanguageChanged(lang: Language): void {

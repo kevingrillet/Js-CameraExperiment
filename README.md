@@ -23,6 +23,9 @@ Application web interactive permettant d'appliquer des filtres vidéo en temps r
   - 🔍 **Edge Detection** : Détection de contours Sobel (blanc sur noir)
   - 🌙 **Night Vision** : Vision nocturne avec grain et vignettage
   - 📼 **VHS** : Effet VHS vintage avec glitches et tracking lines
+- **📥 Téléchargement d'images** : Capture instantanée du flux filtré en PNG
+- **⏸️ Pause/Play** : Mise en pause du flux vidéo pour examiner une frame
+- **⌨️ Raccourcis clavier** : Barre d'espace (pause/play), S (télécharger)
 - **Compteur FPS** : Suivi des performances en temps réel
 - **Gestion du ratio d'aspect** : Adaptation automatique ou forcée
 - **Interface multilingue** : Français et anglais
@@ -99,6 +102,7 @@ src/
 ├── video/
 │   └── VideoSource.ts      # Gestion des sources vidéo
 ├── utils/
+│   ├── CanvasCapture.ts    # Capture et téléchargement d'images
 │   ├── Logger.ts           # Logging centralisé (dev-only)
 │   └── __tests__/          # Tests unitaires des utilitaires
 ├── i18n/
@@ -115,7 +119,10 @@ src/
    - Sélectionner une webcam dans la liste
    - Ou charger une image depuis votre ordinateur
 4. **Appliquer un filtre** en le sélectionnant dans le menu déroulant
-5. **Ajuster les options** :
+5. **Contrôles vidéo** :
+   - Cliquer sur le canvas ou presser **Espace** pour mettre en pause/reprendre
+   - Cliquer sur le bouton 📥 ou presser **S** pour télécharger l'image
+6. **Ajuster les options** :
    - Afficher/masquer le compteur FPS
    - Changer le ratio d'aspect (Auto, 16:9, 4:3, 1:1)
    - Basculer entre français et anglais
@@ -178,6 +185,9 @@ Interactive web application for applying real-time video filters to webcam strea
   - 🔍 **Edge Detection**: Sobel edge detection (white on black)
   - 🌙 **Night Vision**: Night vision with grain and vignetting
   - 📼 **VHS**: Vintage VHS with glitches and tracking lines
+- **📥 Image Download**: Instant capture of filtered stream as PNG
+- **⏸️ Pause/Play**: Pause video stream to examine a specific frame
+- **⌨️ Keyboard Shortcuts**: Spacebar (pause/play), S (download)
 - **FPS Counter**: Real-time performance monitoring
 - **Aspect ratio management**: Automatic or forced adaptation
 - **Multilingual interface**: French and English
@@ -254,6 +264,7 @@ src/
 ├── video/
 │   └── VideoSource.ts      # Video source management
 ├── utils/
+│   ├── CanvasCapture.ts    # Canvas capture and download
 │   ├── Logger.ts           # Centralized logging (dev-only)
 │   └── __tests__/          # Unit tests for utilities
 ├── i18n/
@@ -270,7 +281,10 @@ src/
    - Select a webcam from the list
    - Or load an image from your computer
 4. **Apply a filter** by selecting it from the dropdown menu
-5. **Adjust options**:
+5. **Video controls**:
+   - Click on the canvas or press **Spacebar** to pause/resume
+   - Click the 📥 button or press **S** to download the image
+6. **Adjust options**:
    - Show/hide FPS counter
    - Change aspect ratio (Auto, 16:9, 4:3, 1:1)
    - Switch between French and English
