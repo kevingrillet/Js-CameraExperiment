@@ -784,4 +784,359 @@ Before marking any code as "done", verify:
 8. ✅ **EdgeDetectionFilter** - 1 buffer (sobelBuffer) + cleanup()
 9. ✅ **NightVisionFilter** - No buffers (grain/vignette computed inline)
 
-**Application Status After Review #4:** **Production-ready.** Zero memory leaks, zero known issues, complete test coverage, comprehensive documentation, enforced quality gates, and optimized for 60fps real-time video processing.
+**Application Status After Review #4:** **Production-ready.** Zero memory leaks, zero known issues, complete test coverage, comprehensive documentation, enforced quality gates, and optimized for 60fps real-time video processing
+---
+
+## Future Roadmap
+
+### V2: Capture & Playback Controls (Next Release)
+
+**Status:** Planned
+
+#### Features
+
+**1. Image Download/Capture**
+
+- **Description**: Capture current filtered frame and download as PNG
+- **UI/UX**:
+  - Download icon (📥) positioned below settings gear on the right side
+  - Same auto-hide behavior as gear icon (visible on mouse enter, hidden on mouse leave)
+  - Click triggers instant screenshot of current canvas state with active filter
+  - Downloaded filename: `camera-experiment-{filterName}-{timestamp}.png`
+- **Implementation**:
+  - Canvas → Blob conversion via `toBlob('image/png')`
+  - Trigger download via `<a>` element with `download` attribute
+  - Capture at native canvas resolution (maintain quality)
+  - Progress indicator for large captures (>2MB)
+- **Technical Notes**:
+  - Use `canvas.toBlob()` for better memory efficiency than `toDataURL()`
+  - Handle CORS restrictions if external images loaded
+  - Add error handling for quota exceeded (mobile browsers)
+
+**2. Pause/Play Toggle**
+
+- **Description**: Freeze current frame for examination or capture
+- **UI/UX**:
+  - **Click anywhere on canvas** to toggle pause/play (except on UI controls)
+  - **Visual indicator**: Translucent pause icon (⏸️) overlay centered on screen
+    - Appears when video is **paused**
+    - Fades out when video **resumes playing**
+    - Semi-transparent (opacity 0.6) to not obscure the image
+    - Large size (80px) for visibility but not intrusive
+  - **Alternative**: Small pause/play button in bottom-center (YouTube style)
+    - Appears on hover over canvas
+    - Toggles between ▶️ and ⏸️ icons
+- **Implementation**:
+  - Stop calling `requestAnimationFrame` when paused (render loop halts)
+  - Keep last rendered frame visible on canvas
+  - Resume render loop on play
+  - Spacebar keyboard shortcut for accessibility
+- **Technical Notes**:
+  - Store `isPaused` state in RenderPipeline
+  - Cancel animation frame ID when pausing
+  - Ensure FPS counter stops updating when paused
+  - Prevent pause during device switching or errors
+
+#### Files to Modify
+
+| File | Changes |
+| ---- | ------- |
+| `src/ui/SettingsOverlay.ts` | Add download button below gear, wire click event |
+| `src/core/RenderPipeline.ts` | Add `pause()`, `resume()`, `isPaused()` methods, handle pause state in render loop |
+| `src/main.ts` | Wire download button → capture logic, add canvas click → pause toggle |
+| `index.html` | Add download icon SVG, pause overlay element |
+| `src/i18n/translations.ts` | Add labels: "Download image", "Paused", "Click to resume" |
+| `src/types/index.ts` | Add `CaptureFormat` type (png/jpg/webp) for future extension |
+
+#### New Files
+
+| File | Purpose |
+| ---- | ------- |
+| `src/utils/CanvasCapture.ts` | Utility for canvas → blob conversion, download trigger, filename generation |
+
+#### Acceptance Criteria
+
+- [ ] **AC-V2-1**: Given the mouse enters the viewport, when the cursor is visible, then download icon appears below the gear icon with same fade-in animation
+- [ ] **AC-V2-2**: Given the mouse leaves the viewport, when the cursor exits, then download icon disappears with same fade-out animation as gear
+- [ ] **AC-V2-3**: Given a filter is active and rendering, when user clicks download icon, then current canvas frame is captured and downloaded as PNG with filename `camera-experiment-{filterName}-{timestamp}.png`
+- [ ] **AC-V2-4**: Given the canvas is displaying video, when user clicks anywhere on the canvas (not on UI controls), then the video pauses and pause icon appears centered
+- [ ] **AC-V2-5**: Given the video is paused, when user clicks canvas again, then video resumes and pause icon fades out
+- [ ] **AC-V2-6**: Given the video is paused, when user presses spacebar, then video resumes (keyboard accessibility)
+- [ ] **AC-V2-7**: Given video is paused, when FPS counter is enabled, then FPS counter shows "PAUSED" or stops updating
+- [ ] **AC-V2-8**: Given capture is in progress, when download completes, then user receives visual feedback (brief success message or icon animation)
+- [ ] **AC-V2-9**: Given large canvas size (>1920x1080), when download is triggered, then a loading indicator appears until blob generation completes
+- [ ] **AC-V2-10**: Given download fails (quota exceeded, CORS error), when error occurs, then user-friendly error message displays in current language
+
+---
+
+### V3: High-Impact Filters (Easy Wins)
+
+**Status:** Planned
+
+#### New Filters
+
+**1. Sepia/Vintage Filter**
+
+- **Visual Effect**: Nostalgic sepia tone (warm orange/brown tint) like old photographs
+- **Algorithm**:
+  - Convert to grayscale (weighted RGB average)
+  - Apply sepia matrix transformation: `R' = 0.393R + 0.769G + 0.189B`, `G' = 0.349R + 0.686G + 0.168B`, `B' = 0.272R + 0.534G + 0.131B`
+  - Clamp values to 0-255 range
+- **Performance**: Lightweight (simple RGB multiplication per pixel)
+- **Use Cases**: Portrait mode, vintage photo aesthetic, retro videos
+
+**2. Blur Filter (Box Blur)**
+
+- **Visual Effect**: Soft focus/depth of field simulation
+- **Algorithm**:
+  - Box blur convolution (average of NxN pixel neighborhood)
+  - Kernel size: 5x5 or 7x7 for real-time performance
+  - Horizontal pass + vertical pass (separable convolution for speed)
+- **Performance**: Medium (convolution matrix, but optimized with separable approach)
+- **Use Cases**: Privacy (blur faces/background), artistic soft focus, simulate camera bokeh
+
+**3. Chromatic Aberration Filter**
+
+- **Visual Effect**: RGB color fringing like vintage lenses or glitch art
+- **Algorithm**:
+  - Shift red channel left/up by N pixels
+  - Keep green channel centered (reference)
+  - Shift blue channel right/down by N pixels
+  - Blend at boundaries for smooth transition
+- **Performance**: Lightweight (channel offset, no heavy computation)
+- **Parameters**: Aberration strength (pixel offset: 2-10px)
+- **Use Cases**: Glitch aesthetic, retro sci-fi look, artistic distortion
+
+**4. Thermal/Infrared Filter**
+
+- **Visual Effect**: Heatmap visualization like thermal imaging cameras
+- **Algorithm**:
+  - Convert to grayscale (luminance)
+  - Map luminance to thermal palette:
+    - Black (0) → Dark Blue (cold)
+    - Dark Blue → Purple → Red → Orange → Yellow → White (255, hot)
+  - Use gradient lookup table (LUT) for performance
+- **Performance**: Lightweight (single-pass luminance calculation + color mapping)
+- **Use Cases**: Thermal camera simulation, night vision alternative, artistic heatmap effect
+
+#### Files to Create
+
+| File | Purpose |
+| ---- | ------- |
+| `src/filters/SepiaFilter.ts` | Sepia tone transformation with vintage warmth |
+| `src/filters/BlurFilter.ts` | Box blur with separable convolution (H+V passes) |
+| `src/filters/ChromaticAberrationFilter.ts` | RGB channel shifting for lens aberration effect |
+| `src/filters/ThermalFilter.ts` | Luminance-to-thermal-palette mapping |
+
+#### Files to Modify
+
+| File | Changes |
+| ---- | ------- |
+| `src/types/index.ts` | Add filter types: `'sepia'`, `'blur'`, `'chromatic'`, `'thermal'` |
+| `src/ui/SettingsOverlay.ts` | Add new filters to dropdown menu |
+| `src/main.ts` | Register new filters in filter map |
+| `src/i18n/translations.ts` | Add filter names in FR/EN |
+
+#### Acceptance Criteria
+
+- [ ] **AC-V3-1**: Given Sepia filter is selected, when applied to video, then image has warm orange/brown vintage tone
+- [ ] **AC-V3-2**: Given Blur filter is selected, when applied at 5x5 kernel, then image has soft focus maintaining 30+ FPS
+- [ ] **AC-V3-3**: Given Chromatic Aberration filter is selected, when applied, then visible RGB fringing at edges with red shifted left and blue shifted right
+- [ ] **AC-V3-4**: Given Thermal filter is selected, when applied, then bright areas appear yellow/white and dark areas appear blue/purple in thermal gradient
+- [ ] **AC-V3-5**: Given any V3 filter is active, when FPS is measured, then maintains 30+ FPS on 1080p video stream
+
+---
+
+### V4: Medium-Complexity Filters (Cool Factor)
+
+**Status:** Planned
+
+#### New Filters
+
+**1. ASCII Art Filter**
+
+- **Visual Effect**: Convert video to ASCII characters (Matrix-style)
+- **Algorithm**:
+  - Divide canvas into character cells (8x16 or 16x32 pixels)
+  - Calculate average luminance per cell
+  - Map luminance to ASCII character density: `.:-=+*#%@`
+  - Render characters on black background using Canvas text API
+- **Performance**: Medium (requires text rendering per frame)
+- **Parameters**: Character size (8x8, 16x16, 32x32), font family (monospace)
+- **Use Cases**: Matrix aesthetic, retro terminal look, creative text art
+
+**2. Glitch Art/Datamosh Filter**
+
+- **Visual Effect**: Digital corruption/glitch aesthetic with random artifacts
+- **Algorithm**:
+  - Random horizontal line shifts (5% probability per scanline)
+  - RGB channel separation (random offset per channel)
+  - Block corruption (random 8x8 blocks replaced with noise)
+  - Temporal artifacts (carry glitches across 2-3 frames)
+- **Performance**: Lightweight-Medium (random operations on rows/blocks)
+- **Use Cases**: Cyberpunk aesthetic, error/corruption simulation, artistic glitch
+
+**3. Oil Painting Filter**
+
+- **Visual Effect**: Painterly effect like oil painting on canvas
+- **Algorithm**:
+  - Multi-pass approach:
+    1. Posterization (reduce colors to 16-32 levels)
+    2. Edge-preserving blur (blur within color regions, preserve edges)
+    3. Optional: add canvas texture overlay
+  - Use bilateral filter approximation for edge preservation
+- **Performance**: Medium-Heavy (multi-pass algorithm, convolution)
+- **Use Cases**: Artistic portraits, painterly video effects, creative rendering
+
+**4. Sobel Rainbow (Colored Edge Detection)**
+
+- **Visual Effect**: Edge detection with rainbow gradient based on edge orientation
+- **Algorithm**:
+  - Apply Sobel operator (already implemented in EdgeDetectionFilter)
+  - Calculate edge angle: `θ = atan2(Gy, Gx)`
+  - Map angle to HSL color: `H = (θ + π) / (2π) * 360°`, `S = 100%`, `L = 50%`
+  - Magnitude threshold for edge visibility
+- **Performance**: Medium (Sobel calculation + HSL conversion)
+- **Use Cases**: Artistic edge visualization, directional flow analysis, creative rendering
+
+#### Files to Create
+
+| File | Purpose |
+| ---- | ------- |
+| `src/filters/AsciiFilter.ts` | ASCII character rendering based on luminance |
+| `src/filters/GlitchFilter.ts` | Digital corruption with random artifacts |
+| `src/filters/OilPaintingFilter.ts` | Painterly effect with posterization + edge-preserving blur |
+| `src/filters/SobelRainbowFilter.ts` | Sobel edge detection with HSL color mapping by angle |
+
+#### Files to Modify
+
+| File | Changes |
+| ---- | ------- |
+| `src/types/index.ts` | Add filter types: `'ascii'`, `'glitch'`, `'oilpainting'`, `'sobelrainbow'` |
+| `src/ui/SettingsOverlay.ts` | Add new filters to dropdown menu |
+| `src/main.ts` | Register new filters in filter map |
+| `src/i18n/translations.ts` | Add filter names in FR/EN |
+
+#### Acceptance Criteria
+
+- [ ] **AC-V4-1**: Given ASCII filter is selected, when applied, then video is converted to monospace ASCII characters with luminance-based density
+- [ ] **AC-V4-2**: Given Glitch filter is selected, when applied, then random horizontal shifts, RGB separation, and block corruption visible intermittently
+- [ ] **AC-V4-3**: Given Oil Painting filter is selected, when applied, then image has painterly appearance with reduced colors and preserved edges
+- [ ] **AC-V4-4**: Given Sobel Rainbow filter is selected, when applied, then edges are colored based on orientation (horizontal=red, vertical=cyan, diagonals=yellow/magenta)
+- [ ] **AC-V4-5**: Given any V4 filter is active, when FPS is measured, then maintains 25+ FPS on 1080p video stream (acceptable drop for complex filters)
+
+---
+
+### V5: Advanced Filters (Show-Off Features)
+
+**Status:** Planned
+
+#### New Filters
+
+**1. Vignette Artistique Filter**
+
+- **Visual Effect**: Radial darkening from edges to center (focus spotlight)
+- **Algorithm**:
+  - Calculate distance from each pixel to canvas center
+  - Apply radial gradient: darkness increases with distance
+  - Blend with original image: `pixel' = pixel * (1 - vignetteStrength * normalizedDistance^2)`
+- **Performance**: Lightweight (distance calculation + multiplication per pixel)
+- **Parameters**: Vignette strength (0-1), radius (0.5-1.0)
+- **Use Cases**: Portrait focus, artistic framing, cinematic look
+- **Note**: Can be combined with other filters for enhanced effect
+
+**2. Comic Book/Halftone Filter**
+
+- **Visual Effect**: Comic book printing simulation with CMYK dot pattern
+- **Algorithm**:
+  - Posterize colors (reduce to 8-16 levels)
+  - Apply bold edge detection (thick black outlines)
+  - Simulate halftone dots (CMY channels as dot patterns)
+  - Optional: Ben-Day dots effect
+- **Performance**: Medium (posterization + edge detection + pattern generation)
+- **Use Cases**: Comic book style, pop art, graphic novel aesthetic
+
+**3. Depth of Field (DoF) Filter**
+
+- **Visual Effect**: Bokeh simulation with progressive blur from center
+- **Algorithm**:
+  - Define focus zone (center circle)
+  - Calculate distance from focus zone per pixel
+  - Apply variable blur: blur kernel size increases with distance
+  - Use multiple blur passes for bokeh approximation
+- **Performance**: Heavy (variable convolution, multi-pass)
+- **Parameters**: Focus radius (100-500px), blur strength (0-20)
+- **Use Cases**: Portrait mode, cinematic depth, focus isolation
+
+**4. Kaleidoscope Filter**
+
+- **Visual Effect**: Radial symmetry with mirrored/rotated sections
+- **Algorithm**:
+  - Divide canvas into N radial segments (6, 8, or 12)
+  - Mirror/rotate one segment to all others
+  - Apply polar coordinate transformation for circular symmetry
+  - Optional: add rotation animation over time
+- **Performance**: Medium (coordinate transformation + pixel mapping)
+- **Parameters**: Number of segments (4, 6, 8, 12), rotation angle
+- **Use Cases**: Psychedelic effects, mandala patterns, abstract art
+
+#### Files to Create
+
+| File | Purpose |
+| ---- | ------- |
+| `src/filters/VignetteFilter.ts` | Radial darkening/spotlight effect |
+| `src/filters/ComicBookFilter.ts` | Comic book style with halftone dots and bold edges |
+| `src/filters/DepthOfFieldFilter.ts` | Variable blur for bokeh/focus simulation |
+| `src/filters/KaleidoscopeFilter.ts` | Radial symmetry with mirrored segments |
+
+#### Files to Modify
+
+| File | Changes |
+| ---- | ------- |
+| `src/types/index.ts` | Add filter types: `'vignette'`, `'comicbook'`, `'dof'`, `'kaleidoscope'` |
+| `src/ui/SettingsOverlay.ts` | Add new filters to dropdown menu |
+| `src/main.ts` | Register new filters in filter map |
+| `src/i18n/translations.ts` | Add filter names in FR/EN |
+
+#### Advanced Features (Optional)
+
+- **Filter Parameters UI**: Sliders for adjusting filter intensity/parameters
+  - Vignette: strength, radius
+  - DoF: focus radius, blur amount
+  - Kaleidoscope: segment count, rotation
+- **Filter Presets**: Predefined combinations (e.g., "Cinematic" = Vignette + Sepia + DoF)
+- **Filter Stacking**: Apply multiple filters simultaneously with blend modes
+
+#### Acceptance Criteria
+
+- [ ] **AC-V5-1**: Given Vignette filter is selected, when applied, then edges darken radially toward center creating spotlight effect
+- [ ] **AC-V5-2**: Given Comic Book filter is selected, when applied, then image has posterized colors, thick black outlines, and halftone dot pattern
+- [ ] **AC-V5-3**: Given Depth of Field filter is selected, when applied, then center area stays sharp while edges progressively blur
+- [ ] **AC-V5-4**: Given Kaleidoscope filter is selected with 6 segments, when applied, then image displays 6-way radial symmetry
+- [ ] **AC-V5-5**: Given any V5 filter is active, when FPS is measured, then maintains 20+ FPS on 1080p video stream (acceptable for advanced effects)
+- [ ] **AC-V5-6**: Given Kaleidoscope filter with rotation, when time progresses, then symmetry pattern rotates smoothly (optional animation feature)
+
+---
+
+## Roadmap Summary
+
+| Version | Features | Filter Count | Estimated Effort |
+| ------- | -------- | ------------ | --------------- |
+| **V1** ✅ | Core filters, i18n, quality gates | 9 filters | **COMPLETE** |
+| **V2** 📋 | Image download, pause/play | 9 filters | 1-2 days |
+| **V3** 📋 | High-impact filters (easy wins) | +4 filters (13 total) | 2-3 days |
+| **V4** 📋 | Medium complexity filters | +4 filters (17 total) | 3-5 days |
+| **V5** 📋 | Advanced show-off filters | +4 filters (21 total) | 4-6 days |
+
+**Total V1-V5**: 21 unique filters + download/pause controls
+
+**Future Considerations Beyond V5**:
+
+- Filter parameter controls (sliders for intensity)
+- Filter stacking/combinations
+- Video recording with filters applied
+- WebGL acceleration for complex filters
+- Mobile/touch optimization
+- Multi-camera PiP (Picture-in-Picture)
+- Green screen/chroma key
+- Face detection integration (privacy blur, AR effects)
