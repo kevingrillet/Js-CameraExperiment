@@ -8,6 +8,7 @@ import { Filter, validateImageData } from "./Filter";
 export class MotionDetectionFilter implements Filter {
   private previousFrame: Uint8ClampedArray | null = null;
   private currentFrameBuffer: Uint8ClampedArray | null = null;
+  private motionHeatmap: Uint8ClampedArray | null = null;
 
   /**
    * Minimum pixel difference (0-255) to consider as motion
@@ -22,16 +23,24 @@ export class MotionDetectionFilter implements Filter {
    */
   private readonly NOISE_REDUCTION = 3;
 
+  /**
+   * Decay factor for motion trail (0-1)
+   * Higher values = motion fades slower (longer trail)
+   * Lower values = motion fades faster (shorter trail)
+   */
+  private readonly DECAY_FACTOR = 0.9;
+
   apply(imageData: ImageData): ImageData {
     // Validate input
     validateImageData(imageData);
 
     const data = imageData.data;
 
-    // Initialize previous frame on first call
+    // Initialize buffers on first call
     if (this.previousFrame === null) {
       this.previousFrame = new Uint8ClampedArray(data.length);
       this.previousFrame.set(data);
+      this.motionHeatmap = new Uint8ClampedArray(data.length);
       // Return black frame on first call
       data.fill(0);
       // Set alpha to 255
@@ -41,13 +50,28 @@ export class MotionDetectionFilter implements Filter {
       return imageData;
     }
 
-    // F5: Reuse buffer instead of allocating new one
+    // Reuse buffer instead of allocating new one
     if (this.currentFrameBuffer?.length !== data.length) {
       this.currentFrameBuffer = new Uint8ClampedArray(data.length);
     }
+
+    // Copy current frame BEFORE any modification
     this.currentFrameBuffer.set(data);
 
-    // Calculate motion and create heatmap
+    // Decay previous heatmap for motion trail effect
+    for (let i = 0; i < this.motionHeatmap!.length; i += 4) {
+      this.motionHeatmap![i] = Math.floor(
+        this.motionHeatmap![i]! * this.DECAY_FACTOR
+      );
+      this.motionHeatmap![i + 1] = Math.floor(
+        this.motionHeatmap![i + 1]! * this.DECAY_FACTOR
+      );
+      this.motionHeatmap![i + 2] = Math.floor(
+        this.motionHeatmap![i + 2]! * this.DECAY_FACTOR
+      );
+    }
+
+    // Calculate motion and update heatmap
     for (let i = 0; i < data.length; i += 4) {
       const r = this.currentFrameBuffer[i]!;
       const g = this.currentFrameBuffer[i + 1]!;
@@ -76,10 +100,6 @@ export class MotionDetectionFilter implements Filter {
       }
 
       // Map motion intensity to color gradient
-      // 0-85: Blue (low motion)
-      // 85-170: Yellow (medium motion)
-      // 170-255: Red (high motion)
-
       let red = 0;
       let green = 0;
       let blue = 0;
@@ -102,18 +122,28 @@ export class MotionDetectionFilter implements Filter {
           green = Math.floor((1 - t) * 255);
           blue = 0;
         }
+
+        // Update heatmap with new motion (take max of current and decayed)
+        this.motionHeatmap![i] = Math.max(red, this.motionHeatmap![i]!);
+        this.motionHeatmap![i + 1] = Math.max(
+          green,
+          this.motionHeatmap![i + 1]!
+        );
+        this.motionHeatmap![i + 2] = Math.max(
+          blue,
+          this.motionHeatmap![i + 2]!
+        );
       }
 
-      data[i] = red;
-      data[i + 1] = green;
-      data[i + 2] = blue;
+      // Display the heatmap (with decay from previous frames)
+      data[i] = this.motionHeatmap![i]!;
+      data[i + 1] = this.motionHeatmap![i + 1]!;
+      data[i + 2] = this.motionHeatmap![i + 2]!;
       data[i + 3] = 255; // Alpha
     }
 
-    // F5: Swap buffers - reuse memory instead of allocating
-    const temp = this.previousFrame;
-    this.previousFrame = this.currentFrameBuffer;
-    this.currentFrameBuffer = temp;
+    // Save current frame for next comparison
+    this.previousFrame.set(this.currentFrameBuffer);
 
     return imageData;
   }
@@ -122,7 +152,7 @@ export class MotionDetectionFilter implements Filter {
    * Reset motion detection state when filter is changed
    */
   cleanup(): void {
-    // Reset previous frame when filter is changed
     this.previousFrame = null;
+    this.motionHeatmap = null;
   }
 }

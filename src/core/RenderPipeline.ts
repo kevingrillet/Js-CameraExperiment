@@ -20,7 +20,6 @@ export class RenderPipeline {
   private animationId: number | null = null;
   private aspectRatioMode: AspectRatioMode = "contain";
   private showFPS: boolean = false;
-  private imageDataBuffer: ImageData | null = null;
   private isRendering: boolean = false;
   private consecutiveErrors: number = 0;
   private readonly MAX_CONSECUTIVE_ERRORS = 10;
@@ -246,30 +245,18 @@ export class RenderPipeline {
         sourceDimensions.height
       );
 
-      // F1: Reuse ImageData buffer to avoid reallocation
-      if (
-        this.imageDataBuffer?.width !== sourceDimensions.width ||
-        this.imageDataBuffer?.height !== sourceDimensions.height
-      ) {
-        this.imageDataBuffer = this.offscreenCtx.getImageData(
-          0,
-          0,
-          sourceDimensions.width,
-          sourceDimensions.height
-        );
-      } else {
-        // Reuse existing buffer - just update the data
-        const imageData = this.offscreenCtx.getImageData(
-          0,
-          0,
-          sourceDimensions.width,
-          sourceDimensions.height
-        );
-        this.imageDataBuffer.data.set(imageData.data);
-      }
+      // Get fresh ImageData from canvas (after video draw)
+      // Note: We always create new ImageData to avoid buffer pollution between frames
+      // Some filters (like MotionDetection) modify the buffer directly
+      const imageData = this.offscreenCtx.getImageData(
+        0,
+        0,
+        sourceDimensions.width,
+        sourceDimensions.height
+      );
 
       // Apply filter
-      const filteredData = this.currentFilter.apply(this.imageDataBuffer);
+      const filteredData = this.currentFilter.apply(imageData);
 
       // Put filtered data back
       this.offscreenCtx.putImageData(filteredData, 0, 0);
@@ -420,6 +407,5 @@ export class RenderPipeline {
     if (this.currentFilter.cleanup !== undefined) {
       this.currentFilter.cleanup();
     }
-    this.imageDataBuffer = null;
   }
 }
