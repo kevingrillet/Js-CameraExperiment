@@ -3,18 +3,36 @@
  * Black background with white edges
  */
 
-import { Filter } from "./Filter";
+import { Filter, validateImageData } from "./Filter";
 
 export class EdgeDetectionFilter implements Filter {
-  private readonly EDGE_THRESHOLD = 50; // Threshold for edge visibility
+  /**
+   * Edge detection magnitude threshold (0-255)
+   * 50 provides clean edge detection with minimal noise
+   * Lower values = more edges detected (noisier), higher values = only strongest edges
+   */
+  private readonly EDGE_THRESHOLD = 50;
 
+  private sobelBuffer: Uint8ClampedArray | null = null;
+
+  /**
+   * Apply edge detection filter to image data
+   * Uses Sobel operator to detect edges, displays as white on black background
+   * @param imageData - The input image data to transform
+   * @returns The transformed ImageData with detected edges
+   */
   apply(imageData: ImageData): ImageData {
+    validateImageData(imageData);
+
     const data = imageData.data;
     const width = imageData.width;
     const height = imageData.height;
 
-    // Create a copy for edge detection calculations
-    const originalData = new Uint8ClampedArray(data);
+    // Create a copy for edge detection calculations - reuse buffer
+    if (this.sobelBuffer?.length !== data.length) {
+      this.sobelBuffer = new Uint8ClampedArray(data.length);
+    }
+    this.sobelBuffer.set(data);
 
     // Process each pixel
     for (let y = 1; y < height - 1; y++) {
@@ -22,8 +40,8 @@ export class EdgeDetectionFilter implements Filter {
         const idx = (y * width + x) * 4;
 
         // Calculate Sobel gradients
-        const gx = this.getSobelX(originalData, x, y, width);
-        const gy = this.getSobelY(originalData, x, y, width);
+        const gx = this.getSobelX(this.sobelBuffer, x, y, width);
+        const gy = this.getSobelY(this.sobelBuffer, x, y, width);
 
         // Calculate gradient magnitude
         const magnitude = Math.sqrt(gx * gx + gy * gy);
@@ -89,5 +107,12 @@ export class EdgeDetectionFilter implements Filter {
       2 * this.getGrayscale(data, idx(y + 1, x)) +
       this.getGrayscale(data, idx(y + 1, x + 1))
     );
+  }
+
+  /**
+   * Clean up allocated buffers when filter is replaced
+   */
+  cleanup(): void {
+    this.sobelBuffer = null;
   }
 }

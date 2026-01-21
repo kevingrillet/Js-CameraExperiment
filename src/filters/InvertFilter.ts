@@ -2,10 +2,11 @@
  * InvertFilter - Inverts all RGB color values
  */
 
-import { Filter } from "./Filter";
+import { Filter, validateImageData } from "./Filter";
 
 export class InvertFilter implements Filter {
   apply(imageData: ImageData): ImageData {
+    validateImageData(imageData);
     const data = imageData.data;
 
     // Iterate through all pixels

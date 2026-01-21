@@ -3,15 +3,41 @@
  * Random glitches, tracking lines, color bleeding, and grain
  */
 
-import { Filter } from "./Filter";
+import { Filter, validateImageData } from "./Filter";
 
 export class VHSFilter implements Filter {
   private frameCount = 0;
-  private readonly GLITCH_PROBABILITY = 0.02; // 2% chance per frame
+  private rowDataBuffer: Uint8ClampedArray | null = null;
+
+  /**
+   * Probability of random glitch per frame (0-1)
+   * 0.02 = 2% chance per frame = glitch every ~2 seconds at 30fps
+   * Simulates tracking errors and tape damage on VHS
+   */
+  private readonly GLITCH_PROBABILITY = 0.02;
+
+  /**
+   * Probability of horizontal tracking line per frame (0-1)
+   * 0.15 = 15% chance = frequent but not constant
+   * Mimics VHS head tracking issues and tape wear
+   */
   private readonly TRACKING_LINE_PROBABILITY = 0.15;
+
+  /**
+   * Intensity of film grain noise (0-1)
+   * 0.08 provides subtle grain without overwhelming the image
+   * Represents magnetic particle noise on VHS tape
+   */
   private readonly GRAIN_INTENSITY = 0.08;
 
+  /**
+   * Apply VHS vintage effect to image data
+   * Creates glitches, tracking lines, color bleeding, and grain
+   * @param imageData - The input image data to transform
+   * @returns The transformed ImageData with VHS artifacts
+   */
   apply(imageData: ImageData): ImageData {
+    validateImageData(imageData);
     const data = imageData.data;
     const width = imageData.width;
     const height = imageData.height;
@@ -111,8 +137,13 @@ export class VHSFilter implements Filter {
     const glitchHeight = Math.floor(Math.random() * 20) + 5;
     const shift = Math.floor((Math.random() - 0.5) * 40);
 
+    // Reuse buffer instead of allocating each glitch
+    if (this.rowDataBuffer?.length !== width * 4) {
+      this.rowDataBuffer = new Uint8ClampedArray(width * 4);
+    }
+
     for (let y = glitchY; y < Math.min(glitchY + glitchHeight, height); y++) {
-      const rowData = new Uint8ClampedArray(width * 4);
+      const rowData = this.rowDataBuffer;
 
       // Copy row
       for (let x = 0; x < width; x++) {
@@ -132,5 +163,12 @@ export class VHSFilter implements Filter {
         data[dstIdx + 2] = rowData[srcX * 4 + 2]!;
       }
     }
+  }
+
+  /**
+   * Cleanup allocated buffers
+   */
+  cleanup(): void {
+    this.rowDataBuffer = null;
   }
 }

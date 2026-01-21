@@ -39,6 +39,9 @@ export interface Translations {
     securityError: string;
     generic: string;
     browserNotSupported: string;
+    fileTooLarge: string;
+    invalidFileType: string;
+    renderError: string;
   };
   help: {
     permissionInstructions: string;
@@ -86,6 +89,9 @@ export const translations: Record<Language, Translations> = {
       generic: "Impossible d'accéder à la webcam. Vérifiez les permissions.",
       browserNotSupported:
         "Votre navigateur ne supporte pas l'accès à la webcam. Utilisez Chrome, Firefox ou Edge récent.",
+      fileTooLarge: "Fichier trop volumineux. Taille maximale : {size}MB.",
+      invalidFileType: "Type de fichier invalide. Veuillez charger une image.",
+      renderError: "Erreur de rendu : {message}",
     },
     help: {
       permissionInstructions:
@@ -134,6 +140,9 @@ export const translations: Record<Language, Translations> = {
       generic: "Unable to access webcam. Please check permissions.",
       browserNotSupported:
         "Your browser does not support webcam access. Use a recent version of Chrome, Firefox, or Edge.",
+      fileTooLarge: "File too large. Maximum size: {size}MB.",
+      invalidFileType: "Invalid file type. Please upload an image file.",
+      renderError: "Render error: {message}",
     },
     help: {
       permissionInstructions:

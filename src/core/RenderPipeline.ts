@@ -5,6 +5,8 @@
 import { Filter } from "../filters/Filter";
 import { FPSCounter } from "./FPSCounter";
 import { VideoSource } from "../video/VideoSource";
+import { Logger } from "../utils/Logger";
+import { I18n } from "../i18n/translations";
 import type { AspectRatioMode } from "../types";
 
 export class RenderPipeline {
@@ -20,6 +22,9 @@ export class RenderPipeline {
   private showFPS: boolean = false;
   private imageDataBuffer: ImageData | null = null;
   private isRendering: boolean = false;
+  private consecutiveErrors: number = 0;
+  private readonly MAX_CONSECUTIVE_ERRORS = 10;
+  private onErrorCallback?: (error: Error) => void;
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -54,6 +59,14 @@ export class RenderPipeline {
     window.addEventListener("resize", this.handleResize);
   }
 
+  /**
+   * Set error callback for handling critical render errors
+   * @param callback - Function to call when max consecutive errors reached
+   */
+  setOnError(callback: (error: Error) => void): void {
+    this.onErrorCallback = callback;
+  }
+
   private handleResize = (): void => {
     this.resizeCanvas();
   };
@@ -63,22 +76,45 @@ export class RenderPipeline {
     this.canvas.height = window.innerHeight;
   }
 
+  /**
+   * Change the active filter
+   * @param filter - The new filter to apply
+   */
   setFilter(filter: Filter): void {
     // Cleanup old filter if it has cleanup method
     if (this.currentFilter.cleanup !== undefined) {
-      this.currentFilter.cleanup();
+      try {
+        this.currentFilter.cleanup();
+      } catch (error) {
+        Logger.error(
+          "Filter cleanup failed",
+          error instanceof Error ? error : undefined,
+          "RenderPipeline"
+        );
+      }
     }
     this.currentFilter = filter;
   }
 
+  /**
+   * Set aspect ratio mode for video display
+   * @param mode - Either "contain" (letterbox) or "cover" (crop)
+   */
   setAspectRatioMode(mode: AspectRatioMode): void {
     this.aspectRatioMode = mode;
   }
 
+  /**
+   * Toggle FPS counter display
+   * @param show - Whether to show FPS counter
+   */
   setShowFPS(show: boolean): void {
     this.showFPS = show;
   }
 
+  /**
+   * Start the render loop
+   */
   start(): void {
     if (this.animationId !== null) {
       return; // Already running
@@ -93,6 +129,10 @@ export class RenderPipeline {
     }
   }
 
+  /**
+   * Main render loop - called via requestAnimationFrame
+   * Includes error recovery and graceful degradation
+   */
   private render = (): void => {
     this.animationId = requestAnimationFrame(this.render);
 
@@ -183,10 +223,40 @@ export class RenderPipeline {
       if (this.showFPS) {
         this.drawFPS();
       }
+
+      // Reset error counter on successful render
+      this.consecutiveErrors = 0;
     } catch (error) {
-      // F3: Error handling - log and continue rendering
-      console.error("Render error:", error);
-      // Continue render loop despite errors
+      // F3: Comprehensive error handling with recovery
+      this.consecutiveErrors++;
+
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown render error";
+      const t = I18n.t();
+
+      Logger.error(
+        t.errors.renderError.replace("{message}", errorMessage),
+        error instanceof Error ? error : new Error(errorMessage),
+        "RenderPipeline"
+      );
+
+      // Check if we've exceeded max consecutive errors
+      if (this.consecutiveErrors >= this.MAX_CONSECUTIVE_ERRORS) {
+        this.stop();
+        Logger.error(
+          `Render loop stopped after ${this.MAX_CONSECUTIVE_ERRORS} consecutive errors`,
+          error instanceof Error ? error : new Error(errorMessage),
+          "RenderPipeline"
+        );
+
+        // Notify callback if set
+        if (this.onErrorCallback !== undefined) {
+          this.onErrorCallback(
+            error instanceof Error ? error : new Error(errorMessage)
+          );
+        }
+      }
+      // Continue render loop to attempt recovery
     } finally {
       this.isRendering = false;
     }

@@ -8,6 +8,7 @@ import { RenderPipeline } from "./core/RenderPipeline";
 import { FPSCounter } from "./core/FPSCounter";
 import { SettingsOverlay } from "./ui/SettingsOverlay";
 import { I18n, type Language } from "./i18n/translations";
+import { Logger } from "./utils/Logger";
 
 // Import all filters
 import { NoneFilter } from "./filters/NoneFilter";
@@ -29,6 +30,7 @@ class App {
   private fpsCounter: FPSCounter;
   private settingsOverlay: SettingsOverlay;
   private filters: Map<FilterType, Filter>;
+  private currentWebcamDeviceId: string | undefined;
 
   constructor() {
     // Initialize core components
@@ -63,6 +65,16 @@ class App {
       this.filters.get("none")!,
       this.fpsCounter
     );
+
+    // Set error callback for critical render failures
+    this.renderPipeline.setOnError((error) => {
+      const t = I18n.t();
+      this.showStatus(
+        t.webcamError,
+        t.errors.renderError.replace("{message}", error.message),
+        true
+      );
+    });
 
     // Initialize settings overlay
     this.settingsOverlay = new SettingsOverlay({
@@ -108,7 +120,11 @@ class App {
       // Start rendering
       this.renderPipeline.start();
     } catch (error) {
-      console.error("Failed to start application:", error);
+      Logger.error(
+        "Failed to start application",
+        error instanceof Error ? error : new Error(String(error)),
+        "App"
+      );
 
       const errorMessage =
         error instanceof Error ? error.message : t.errors.generic;
@@ -152,14 +168,48 @@ class App {
 
   private async handleWebcamSelected(deviceId?: string): Promise<void> {
     const t = I18n.t();
+    const previousDeviceId = this.currentWebcamDeviceId;
+
     try {
       this.showStatus(t.loading, t.changingWebcam);
       await this.videoSource.startWebcam(deviceId);
       await this.waitForVideoReady();
       this.hideStatus();
+
+      // Save successful device ID
+      this.currentWebcamDeviceId = deviceId;
     } catch (error) {
-      console.error("Failed to switch webcam:", error);
-      this.showStatus(t.webcamError, t.errors.generic, true);
+      Logger.error(
+        "Failed to switch webcam",
+        error instanceof Error ? error : new Error(String(error)),
+        "App"
+      );
+
+      // Try to rollback to previous webcam
+      if (previousDeviceId !== undefined) {
+        try {
+          await this.videoSource.startWebcam(previousDeviceId);
+          await this.waitForVideoReady();
+          // TypeScript narrow: previousDeviceId is string here (checked above)
+          this.currentWebcamDeviceId = previousDeviceId;
+          this.showStatus(
+            t.webcamError,
+            t.errors.generic + " " + "Reverted to previous webcam.",
+            true
+          );
+        } catch (rollbackError) {
+          Logger.error(
+            "Rollback to previous webcam failed",
+            rollbackError instanceof Error
+              ? rollbackError
+              : new Error(String(rollbackError)),
+            "App"
+          );
+          this.showStatus(t.webcamError, t.errors.generic, true);
+        }
+      } else {
+        this.showStatus(t.webcamError, t.errors.generic, true);
+      }
     }
   }
 
@@ -170,8 +220,14 @@ class App {
       await this.videoSource.loadImage(file);
       this.hideStatus();
     } catch (error) {
-      console.error("Failed to load image:", error);
-      this.showStatus(t.webcamError, t.errors.generic, true);
+      Logger.error(
+        "Failed to load image",
+        error instanceof Error ? error : new Error(String(error)),
+        "App"
+      );
+      const errorMessage =
+        error instanceof Error ? error.message : t.errors.generic;
+      this.showStatus(t.webcamError, errorMessage, true);
     }
   }
 

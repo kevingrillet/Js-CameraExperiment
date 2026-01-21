@@ -4,11 +4,16 @@
  * Original Game Boy resolution: 160x144 pixels
  */
 
-import { Filter } from "./Filter";
+import { Filter, validateImageData } from "./Filter";
 
 export class PixelateFilter implements Filter {
-  private readonly GB_WIDTH = 160; // Game Boy horizontal resolution
-  private readonly GB_HEIGHT = 144; // Game Boy vertical resolution
+  /** Game Boy horizontal resolution - target width for pixelation */
+  private readonly GB_WIDTH = 160;
+
+  /** Game Boy vertical resolution - target height for pixelation */
+  private readonly GB_HEIGHT = 144;
+
+  private originalDataBuffer: Uint8ClampedArray | null = null;
 
   // Original Game Boy color palette (darkest to lightest)
   private readonly PALETTE = [
@@ -19,6 +24,8 @@ export class PixelateFilter implements Filter {
   ];
 
   apply(imageData: ImageData): ImageData {
+    validateImageData(imageData);
+
     const data = imageData.data;
     const width = imageData.width;
     const height = imageData.height;
@@ -27,8 +34,11 @@ export class PixelateFilter implements Filter {
     const blockWidth = width / this.GB_WIDTH;
     const blockHeight = height / this.GB_HEIGHT;
 
-    // Create a copy for reading original values
-    const originalData = new Uint8ClampedArray(data);
+    // F5: Reuse buffer instead of allocating new one every frame
+    if (this.originalDataBuffer?.length !== data.length) {
+      this.originalDataBuffer = new Uint8ClampedArray(data.length);
+    }
+    this.originalDataBuffer.set(data);
 
     // Process each Game Boy pixel
     for (let gbY = 0; gbY < this.GB_HEIGHT; gbY++) {
@@ -48,9 +58,13 @@ export class PixelateFilter implements Filter {
         for (let y = startY; y < endY && y < height; y++) {
           for (let x = startX; x < endX && x < width; x++) {
             const idx = (y * width + x) * 4;
-            sumR += originalData[idx]!;
-            sumG += originalData[idx + 1]!;
-            sumB += originalData[idx + 2]!;
+            const buffer = this.originalDataBuffer;
+            if (buffer === null) {
+              continue;
+            }
+            sumR += buffer[idx]!;
+            sumG += buffer[idx + 1]!;
+            sumB += buffer[idx + 2]!;
             count++;
           }
         }

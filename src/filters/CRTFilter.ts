@@ -3,20 +3,50 @@
  * Adds scanlines and subtle bloom effect
  */
 
-import { Filter } from "./Filter";
+import { Filter, validateImageData } from "./Filter";
 
 export class CRTFilter implements Filter {
-  private readonly SCANLINE_INTENSITY = 0.3; // Darkness of scanlines (0-1)
-  private readonly SCANLINE_SPACING = 3; // Pixels between scanlines
-  private readonly BLOOM_AMOUNT = 0.15; // Subtle bloom/glow effect
+  /**
+   * Darkness of horizontal scanlines (0-1)
+   * Value of 0.3 provides visible scanlines without being too harsh
+   * Mimics the shadow mask effect of CRT phosphor arrangement
+   */
+  private readonly SCANLINE_INTENSITY = 0.3;
 
+  /**
+   * Spacing between scanlines in pixels
+   * 3 pixels matches the typical phosphor triad spacing on vintage CRTs
+   * Lower values = more scanlines (slower), higher values = less visible effect
+   */
+  private readonly SCANLINE_SPACING = 3;
+
+  /**
+   * Intensity of bloom/glow effect (0-1)
+   * 0.15 provides subtle glow without washing out the image
+   * Simulates the electron beam bloom on CRT phosphors
+   */
+  private readonly BLOOM_AMOUNT = 0.15;
+
+  private bloomBuffer: Uint8ClampedArray | null = null;
+
+  /**
+   * Apply CRT filter effect to image data
+   * Creates scanlines and subtle bloom to simulate cathode ray tube display
+   * @param imageData - The input image data to transform
+   * @returns The transformed ImageData with CRT effect
+   */
   apply(imageData: ImageData): ImageData {
+    validateImageData(imageData);
     const data = imageData.data;
     const width = imageData.width;
     const height = imageData.height;
 
     // First pass: Add subtle bloom by blending with slightly brighter version
-    const bloomData = new Uint8ClampedArray(data);
+    // Reuse buffer to avoid allocation in render loop
+    if (this.bloomBuffer?.length !== data.length) {
+      this.bloomBuffer = new Uint8ClampedArray(data.length);
+    }
+    this.bloomBuffer.set(data);
     for (let i = 0; i < data.length; i += 4) {
       const r = data[i]!;
       const g = data[i + 1]!;
@@ -27,9 +57,9 @@ export class CRTFilter implements Filter {
       const bloomG = Math.min(255, g * (1 + this.BLOOM_AMOUNT));
       const bloomB = Math.min(255, b * (1 + this.BLOOM_AMOUNT));
 
-      bloomData[i] = bloomR;
-      bloomData[i + 1] = bloomG;
-      bloomData[i + 2] = bloomB;
+      this.bloomBuffer[i] = bloomR;
+      this.bloomBuffer[i + 1] = bloomG;
+      this.bloomBuffer[i + 2] = bloomB;
     }
 
     // Second pass: Apply bloom and scanlines
@@ -44,9 +74,9 @@ export class CRTFilter implements Filter {
         const originalG = data[idx + 1]!;
         const originalB = data[idx + 2]!;
 
-        const bloomR = bloomData[idx]!;
-        const bloomG = bloomData[idx + 1]!;
-        const bloomB = bloomData[idx + 2]!;
+        const bloomR = this.bloomBuffer[idx]!;
+        const bloomG = this.bloomBuffer[idx + 1]!;
+        const bloomB = this.bloomBuffer[idx + 2]!;
 
         let r =
           originalR * (1 - this.BLOOM_AMOUNT) + bloomR * this.BLOOM_AMOUNT;
@@ -70,5 +100,12 @@ export class CRTFilter implements Filter {
     }
 
     return imageData;
+  }
+
+  /**
+   * Clean up allocated buffers when filter is replaced
+   */
+  cleanup(): void {
+    this.bloomBuffer = null;
   }
 }

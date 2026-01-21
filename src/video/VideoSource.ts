@@ -67,15 +67,20 @@ export class VideoSource {
       this.videoElement.playsInline = true;
 
       // F8: Add timeout to prevent hanging on loadedmetadata
+      // Store handlers for cleanup
+      let metadataHandler: (() => void) | null = null;
+      let errorHandler: (() => void) | null = null;
+
       await Promise.race([
         new Promise<void>((resolve, reject) => {
           if (this.videoElement === null) {
             reject(new Error("Video element not created"));
             return;
           }
-          this.videoElement.onloadedmetadata = (): void => resolve();
-          this.videoElement.onerror = (): void =>
-            reject(new Error("Video loading failed"));
+          metadataHandler = (): void => resolve();
+          errorHandler = (): void => reject(new Error("Video loading failed"));
+          this.videoElement.onloadedmetadata = metadataHandler;
+          this.videoElement.onerror = errorHandler;
         }),
         new Promise<void>((_, reject) =>
           setTimeout(
@@ -83,7 +88,13 @@ export class VideoSource {
             10000
           )
         ),
-      ]);
+      ]).finally(() => {
+        // Cleanup event listeners to prevent memory leaks
+        if (this.videoElement !== null) {
+          this.videoElement.onloadedmetadata = null;
+          this.videoElement.onerror = null;
+        }
+      });
 
       this.currentType = "webcam";
     } catch (error) {
@@ -108,19 +119,26 @@ export class VideoSource {
 
   /**
    * Load an image from a File
+   * @param file - The image file to load
+   * @throws Error if file is too large or invalid type
    */
   async loadImage(file: File): Promise<void> {
+    const t = I18n.t();
+
     // F9: Validate file size (max 10MB)
     const MAX_FILE_SIZE = 10 * 1024 * 1024;
     if (file.size > MAX_FILE_SIZE) {
       throw new Error(
-        `File too large. Maximum size is ${MAX_FILE_SIZE / 1024 / 1024}MB`
+        t.errors.fileTooLarge.replace(
+          "{size}",
+          String(MAX_FILE_SIZE / 1024 / 1024)
+        )
       );
     }
 
     // Validate file type
     if (!file.type.startsWith("image/")) {
-      throw new Error("Invalid file type. Please upload an image file.");
+      throw new Error(t.errors.invalidFileType);
     }
 
     this.stop();

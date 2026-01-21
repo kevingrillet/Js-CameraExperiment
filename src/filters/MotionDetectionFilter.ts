@@ -3,15 +3,29 @@
  * Blue = low motion, Yellow = medium motion, Red = high motion
  */
 
-import { Filter } from "./Filter";
+import { Filter, validateImageData } from "./Filter";
 
 export class MotionDetectionFilter implements Filter {
   private previousFrame: Uint8ClampedArray | null = null;
   private currentFrameBuffer: Uint8ClampedArray | null = null;
-  private readonly MOTION_THRESHOLD = 25; // Minimum difference to consider as motion
-  private readonly NOISE_REDUCTION = 3; // Reduces noise from camera sensor
+
+  /**
+   * Minimum pixel difference (0-255) to consider as motion
+   * Lower values = more sensitive to small changes
+   * Higher values = only detect significant changes
+   */
+  private readonly MOTION_THRESHOLD = 25;
+
+  /**
+   * Noise reduction threshold to filter out camera sensor noise
+   * Small differences below this value are ignored
+   */
+  private readonly NOISE_REDUCTION = 3;
 
   apply(imageData: ImageData): ImageData {
+    // Validate input
+    validateImageData(imageData);
+
     const data = imageData.data;
 
     // Initialize previous frame on first call
@@ -104,6 +118,9 @@ export class MotionDetectionFilter implements Filter {
     return imageData;
   }
 
+  /**
+   * Reset motion detection state when filter is changed
+   */
   cleanup(): void {
     // Reset previous frame when filter is changed
     this.previousFrame = null;

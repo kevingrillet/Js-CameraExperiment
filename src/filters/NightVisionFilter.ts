@@ -3,13 +3,31 @@
  * Green tint, grain, and vignetting for light amplification look
  */
 
-import { Filter } from "./Filter";
+import { Filter, validateImageData } from "./Filter";
 
 export class NightVisionFilter implements Filter {
+  /**
+   * Intensity of film grain noise (0-1)
+   * 0.15 provides visible grain for authentic night vision look
+   * Simulates sensor noise from image intensifier tubes
+   */
   private readonly GRAIN_INTENSITY = 0.15;
+
+  /**
+   * Strength of vignette darkening at edges (0-1)
+   * 0.4 creates noticeable circular darkening around edges
+   * Mimics the limited field of view of night vision devices
+   */
   private readonly VIGNETTE_STRENGTH = 0.4;
 
+  /**
+   * Apply night vision effect to image data
+   * Creates green-tinted image with grain and vignetting
+   * @param imageData - The input image data to transform
+   * @returns The transformed ImageData with night vision effect
+   */
   apply(imageData: ImageData): ImageData {
+    validateImageData(imageData);
     const data = imageData.data;
     const width = imageData.width;
     const height = imageData.height;
