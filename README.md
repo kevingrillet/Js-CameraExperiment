@@ -13,13 +13,16 @@ Application web interactive permettant d'appliquer des filtres vidéo en temps r
 ### ✨ Fonctionnalités
 
 - **Sources multiples** : Webcam en direct ou images statiques
-- **6 filtres disponibles** :
+- **9 filtres disponibles** :
   - 🔄 **None** : Flux vidéo original sans traitement
   - 🎨 **Invert** : Inversion des couleurs
-  - 🏃 **Motion Detection** : Détection de mouvement
-  - 🔲 **Pixelate** : Effet de pixellisation rétro
-  - 📺 **CRT** : Simulation d'écran cathodique vintage
-  - 🎬 **Rotoscope** : Effet de rotoscopie artistique
+  - 🏃 **Motion Detection** : Détection de mouvement avec heatmap
+  - 🔲 **Pixelate** : Effet de pixellisation rétro Game Boy
+  - 📺 **CRT** : Simulation d'écran cathodique vintage avec scanlines
+  - 🎬 **Rotoscope** : Effet cartoon avec quantification de couleurs
+  - 🔍 **Edge Detection** : Détection de contours Sobel (blanc sur noir)
+  - 🌙 **Night Vision** : Vision nocturne avec grain et vignettage
+  - 📼 **VHS** : Effet VHS vintage avec glitches et tracking lines
 - **Compteur FPS** : Suivi des performances en temps réel
 - **Gestion du ratio d'aspect** : Adaptation automatique ou forcée
 - **Interface multilingue** : Français et anglais
@@ -52,10 +55,24 @@ L'application sera accessible sur `http://localhost:5173` (ou le port indiqué d
 
 ### 🛠️ Scripts disponibles
 
+#### Développement
+
 - `npm run dev` : Lance le serveur de développement avec hot-reload
 - `npm run build` : Compile le projet pour la production
 - `npm run preview` : Prévisualise la version de production
+
+#### Qualité du code
+
 - `npm run type-check` : Vérifie les types TypeScript sans compilation
+- `npm run test` : Lance les tests unitaires en mode watch (Vitest)
+- `npm run test:run` : Exécute les tests une fois (pour CI/CD)
+- `npm run test:ui` : Interface visuelle pour les tests
+- `npm run lint` : Vérifie le code avec ESLint
+- `npm run lint:fix` : Corrige automatiquement les erreurs ESLint
+- `npm run lint:md` : Vérifie les fichiers Markdown
+- `npm run format` : Formate le code avec Prettier
+- `npm run format:check` : Vérifie le formatage sans modifier
+- `npm run validate` : Pipeline complet (type-check + tests + lint + format)
 
 ### 📁 Structure du projet
 
@@ -64,19 +81,26 @@ src/
 ├── main.ts                  # Point d'entrée principal
 ├── core/                    # Composants principaux
 │   ├── FPSCounter.ts       # Compteur de frames par seconde
-│   └── RenderPipeline.ts   # Pipeline de rendu
-├── filters/                 # Filtres vidéo
-│   ├── Filter.ts           # Interface de base
+│   └── RenderPipeline.ts   # Pipeline de rendu avec error handling
+├── filters/                 # Filtres vidéo (9 filtres)
+│   ├── Filter.ts           # Interface de base + validation
 │   ├── NoneFilter.ts       # Pas de filtre
 │   ├── InvertFilter.ts     # Inversion des couleurs
 │   ├── MotionDetectionFilter.ts  # Détection de mouvement
-│   ├── PixelateFilter.ts   # Pixellisation
-│   ├── CRTFilter.ts        # Effet CRT
-│   └── RotoscopeFilter.ts  # Rotoscopie
+│   ├── PixelateFilter.ts   # Pixellisation Game Boy
+│   ├── CRTFilter.ts        # Effet CRT avec scanlines
+│   ├── RotoscopeFilter.ts  # Rotoscopie cartoon
+│   ├── EdgeDetectionFilter.ts    # Détection de contours Sobel
+│   ├── NightVisionFilter.ts      # Vision nocturne
+│   ├── VHSFilter.ts        # Effet VHS vintage
+│   └── __tests__/          # Tests unitaires des filtres
 ├── ui/
 │   └── SettingsOverlay.ts  # Interface de paramètres
 ├── video/
 │   └── VideoSource.ts      # Gestion des sources vidéo
+├── utils/
+│   ├── Logger.ts           # Logging centralisé (dev-only)
+│   └── __tests__/          # Tests unitaires des utilitaires
 ├── i18n/
 │   └── translations.ts     # Traductions FR/EN
 └── types/
@@ -98,13 +122,24 @@ src/
 
 ### 🔧 Technologies utilisées
 
-- **TypeScript** : Langage de programmation typé
-- **Vite** : Build tool et serveur de développement ultra-rapide
+#### Core
+
+- **TypeScript 5.3.3** : Langage de programmation typé (strict mode)
+- **Vite 7.3.1** : Build tool et serveur de développement ultra-rapide
 - **Canvas 2D API** : Manipulation d'images en temps réel
 - **MediaStream API** (`navigator.mediaDevices.getUserMedia()`) : Accès à la webcam
 - **File API** (`FileReader`) : Upload et lecture d'images
 - **RequestAnimationFrame API** : Boucle de rendu optimisée 60 FPS
 - **CSS transitions** : Animations fluides de l'interface
+
+#### Qualité & Tests
+
+- **Vitest 2.1.9** : Framework de tests unitaires avec Happy-DOM
+- **ESLint 9.18.0** : Linting avec typescript-eslint
+- **Prettier 3.2.0** : Formatage automatique du code
+- **MarkdownLint** : Validation des fichiers Markdown
+- **Husky + lint-staged** : Git hooks pour validation pre-commit
+- **GitHub Actions** : CI/CD avec pipeline de validation automatique
 
 ### 📄 Licence
 
@@ -133,13 +168,16 @@ Interactive web application for applying real-time video filters to webcam strea
 ### ✨ Features
 
 - **Multiple sources**: Live webcam or static images
-- **6 available filters**:
+- **9 available filters**:
   - 🔄 **None**: Original video stream without processing
   - 🎨 **Invert**: Color inversion
-  - 🏃 **Motion Detection**: Movement detection
-  - 🔲 **Pixelate**: Retro pixelation effect
-  - 📺 **CRT**: Vintage cathode ray tube simulation
-  - 🎬 **Rotoscope**: Artistic rotoscoping effect
+  - 🏃 **Motion Detection**: Movement detection with heatmap
+  - 🔲 **Pixelate**: Retro Game Boy pixelation effect
+  - 📺 **CRT**: Vintage cathode ray tube with scanlines
+  - 🎬 **Rotoscope**: Cartoon effect with color quantization
+  - 🔍 **Edge Detection**: Sobel edge detection (white on black)
+  - 🌙 **Night Vision**: Night vision with grain and vignetting
+  - 📼 **VHS**: Vintage VHS with glitches and tracking lines
 - **FPS Counter**: Real-time performance monitoring
 - **Aspect ratio management**: Automatic or forced adaptation
 - **Multilingual interface**: French and English
@@ -172,10 +210,24 @@ The application will be accessible at `http://localhost:5173` (or the port indic
 
 ### 🛠️ Available Scripts
 
+#### Development
+
 - `npm run dev`: Starts the development server with hot-reload
 - `npm run build`: Compiles the project for production
 - `npm run preview`: Previews the production build
+
+#### Code Quality
+
 - `npm run type-check`: Checks TypeScript types without compilation
+- `npm run test`: Runs unit tests in watch mode (Vitest)
+- `npm run test:run`: Executes tests once (for CI/CD)
+- `npm run test:ui`: Visual interface for tests
+- `npm run lint`: Checks code with ESLint
+- `npm run lint:fix`: Auto-fixes ESLint errors
+- `npm run lint:md`: Checks Markdown files
+- `npm run format`: Formats code with Prettier
+- `npm run format:check`: Checks formatting without modifying
+- `npm run validate`: Complete pipeline (type-check + tests + lint + format)
 
 ### 📁 Project Structure
 
@@ -184,19 +236,26 @@ src/
 ├── main.ts                  # Main entry point
 ├── core/                    # Core components
 │   ├── FPSCounter.ts       # Frames per second counter
-│   └── RenderPipeline.ts   # Rendering pipeline
-├── filters/                 # Video filters
-│   ├── Filter.ts           # Base interface
+│   └── RenderPipeline.ts   # Rendering pipeline with error handling
+├── filters/                 # Video filters (9 filters)
+│   ├── Filter.ts           # Base interface + validation
 │   ├── NoneFilter.ts       # No filter
 │   ├── InvertFilter.ts     # Color inversion
 │   ├── MotionDetectionFilter.ts  # Motion detection
-│   ├── PixelateFilter.ts   # Pixelation
-│   ├── CRTFilter.ts        # CRT effect
-│   └── RotoscopeFilter.ts  # Rotoscoping
+│   ├── PixelateFilter.ts   # Game Boy pixelation
+│   ├── CRTFilter.ts        # CRT effect with scanlines
+│   ├── RotoscopeFilter.ts  # Cartoon rotoscoping
+│   ├── EdgeDetectionFilter.ts    # Sobel edge detection
+│   ├── NightVisionFilter.ts      # Night vision
+│   ├── VHSFilter.ts        # Vintage VHS effect
+│   └── __tests__/          # Unit tests for filters
 ├── ui/
 │   └── SettingsOverlay.ts  # Settings interface
 ├── video/
 │   └── VideoSource.ts      # Video source management
+├── utils/
+│   ├── Logger.ts           # Centralized logging (dev-only)
+│   └── __tests__/          # Unit tests for utilities
 ├── i18n/
 │   └── translations.ts     # FR/EN translations
 └── types/
@@ -218,13 +277,24 @@ src/
 
 ### 🔧 Technologies Used
 
-- **TypeScript**: Typed programming language
-- **Vite**: Ultra-fast build tool and development server
+#### Core
+
+- **TypeScript 5.3.3**: Typed programming language (strict mode)
+- **Vite 7.3.1**: Ultra-fast build tool and development server
 - **Canvas 2D API**: Real-time image manipulation
 - **MediaStream API** (`navigator.mediaDevices.getUserMedia()`): Webcam access
 - **File API** (`FileReader`): Image upload and reading
 - **RequestAnimationFrame API**: Optimized 60 FPS render loop
 - **CSS transitions**: Smooth UI animations
+
+#### Quality & Testing
+
+- **Vitest 2.1.9**: Unit testing framework with Happy-DOM
+- **ESLint 9.18.0**: Linting with typescript-eslint
+- **Prettier 3.2.0**: Automatic code formatting
+- **MarkdownLint**: Markdown file validation
+- **Husky + lint-staged**: Git hooks for pre-commit validation
+- **GitHub Actions**: CI/CD with automated validation pipeline
 
 ### 📄 License
 
