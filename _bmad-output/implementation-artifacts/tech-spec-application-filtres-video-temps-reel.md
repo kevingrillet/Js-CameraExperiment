@@ -43,6 +43,7 @@ Application web TypeScript utilisant Canvas 2D pour appliquer des filtres visuel
 - Interface utilisateur :
   - Canvas plein écran
   - Overlay avec icône engrenage (auto-hide quand souris sort de la fenêtre)
+  - **GitHub Corner** : Lien vers le repo GitHub dans le coin haut gauche avec auto-hide au hover (visible seulement quand curseur sur l'écran)
   - Panel de configuration : choix de source, choix de filtre, affichage/masquage FPS
   - Gestion du ratio d'aspect : option bandes noires vs crop
   - Compteur FPS optionnel
@@ -123,6 +124,7 @@ Application web TypeScript utilisant Canvas 2D pour appliquer des filtres visuel
 | `src/filters/CRTFilter.ts` | Filtre effet CRT |
 | `src/filters/RotoscopeFilter.ts` | Filtre rotoscopie avec quantification couleurs et edge detection |
 | `src/ui/SettingsOverlay.ts` | Panel de configuration avec auto-hide |
+| `src/ui/GitHubCorner.ts` | GitHub Corner SVG avec auto-hide synchronisé |
 | `src/i18n/translations.ts` | Système de traductions FR/EN avec classe I18n |
 | `src/types/index.ts` | Types partagés (FilterType, SourceType, Language, etc.) |
 
@@ -151,6 +153,7 @@ Application web TypeScript utilisant Canvas 2D pour appliquer des filtres visuel
 
 - **Fullscreen canvas**: Canvas prend 100vw x 100vh via CSS
 - **Overlay auto-hide**: Icône engrenage visible par défaut, panel se déploie au clic, tout disparaît si souris sort de window (mouseenter/mouseleave sur document)
+- **GitHub Corner auto-hide**: Logo GitHub SVG dans le coin haut gauche (style github-corners), apparaît seulement au mouseenter sur document, disparaît au mouseleave, même comportement que l'engrenage
 - **Ratio handling**: Option toggle entre "contain" (bandes noires) et "cover" (crop pour remplir)
 - **i18n (Internationalisation)**: Système de traductions avec classe I18n singleton, support FR/EN, switch de langue via drapeaux dans l'UI, labels dynamiques mis à jour en temps réel
 
@@ -254,8 +257,13 @@ Application web TypeScript utilisant Canvas 2D pour appliquer des filtres visuel
 
 - [ ] **Task 12**: Modifier index.html pour la structure complète
   - File: `index.html`
-  - Action: Ajouter canvas fullscreen, conteneur overlay settings, styles CSS pour fullscreen et overlay
-  - Notes: Canvas 100vw x 100vh, position fixed, overlay en position absolute top-right
+  - Action: Ajouter canvas fullscreen, conteneur overlay settings, GitHub Corner SVG dans le coin haut gauche, styles CSS pour fullscreen et overlay
+  - Notes: Canvas 100vw x 100vh, position fixed, overlay en position absolute top-right, GitHub Corner en position absolute top-left avec auto-hide
+
+- [ ] **Task 12b**: Ajouter le GitHub Corner avec auto-hide
+  - File: `src/ui/GitHubCorner.ts`
+  - Action: Créer classe pour gérer le GitHub Corner SVG (style github-corners de tholman), écouter mouseenter/mouseleave sur document pour auto-hide synchronisé avec SettingsOverlay
+  - Notes: SVG positionné en absolute top-left, z-index approprié, même logique d'auto-hide que l'engrenage, lien vers le repo GitHub du projet
 
 - [ ] **Task 13**: Intégrer tous les modules dans main.ts
   - File: `src/main.ts`
@@ -287,7 +295,9 @@ Application web TypeScript utilisant Canvas 2D pour appliquer des filtres visuel
 #### Interface Utilisateur
 
 - [ ] **AC11**: Given l'application est ouverte, when la souris est dans la fenêtre, then l'icône engrenage est visible en haut à droite
-- [ ] **AC12**: Given la souris sort de la fenêtre du navigateur, when le curseur quitte le viewport, then l'icône engrenage et le panel disparaissent avec une transition smooth
+- [ ] **AC12**: Given la souris sort de la fenêtre du navigateur, when le curseur quitte le viewport, then l'icône engrenage, le panel, et le GitHub Corner disparaissent avec une transition smooth
+- [ ] **AC12b**: Given la souris entre dans la fenêtre du navigateur, when le curseur entre dans le viewport, then l'icône engrenage et le GitHub Corner apparaissent avec une transition smooth
+- [ ] **AC12c**: Given le GitHub Corner est visible, when l'utilisateur clique dessus, then une nouvelle fenêtre/onglet s'ouvre vers le repo GitHub du projet
 - [ ] **AC13**: Given le panel settings est ouvert, when l'utilisateur clique sur l'icône engrenage, then le panel se déploie et affiche les contrôles (source, filtre, FPS, ratio)
 - [ ] **AC14**: Given l'affichage FPS est activé, when le flux vidéo est en cours, then le compteur FPS s'affiche en overlay (ex: "60 FPS") et se met à jour en temps réel
 - [ ] **AC15**: Given l'affichage FPS est désactivé, when le toggle est off, then aucun compteur FPS n'est visible

@@ -7,6 +7,7 @@ import { VideoSource } from "./video/VideoSource";
 import { RenderPipeline } from "./core/RenderPipeline";
 import { FPSCounter } from "./core/FPSCounter";
 import { SettingsOverlay } from "./ui/SettingsOverlay";
+import { GitHubCorner } from "./ui/GitHubCorner";
 import { I18n, type Language } from "./i18n/translations";
 import { Logger } from "./utils/Logger";
 
@@ -93,6 +94,9 @@ class App {
       onLanguageChanged: (lang: Language): void =>
         this.handleLanguageChanged(lang),
     });
+
+    // Initialize GitHub Corner
+    new GitHubCorner("https://github.com/kevingrillet/Js-CameraExperiment");
 
     // Start the application
     void this.start();
