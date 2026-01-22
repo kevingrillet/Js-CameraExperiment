@@ -22,6 +22,10 @@ import { RotoscopeFilter } from "./filters/RotoscopeFilter";
 import { EdgeDetectionFilter } from "./filters/EdgeDetectionFilter";
 import { NightVisionFilter } from "./filters/NightVisionFilter";
 import { VHSFilter } from "./filters/VHSFilter";
+import { SepiaFilter } from "./filters/SepiaFilter";
+import { BlurFilter } from "./filters/BlurFilter";
+import { ChromaticAberrationFilter } from "./filters/ChromaticAberrationFilter";
+import { ThermalFilter } from "./filters/ThermalFilter";
 
 import type { FilterType } from "./types";
 import type { Filter } from "./filters/Filter";
@@ -45,13 +49,17 @@ class App {
     // Initialize all filters
     this.filters = new Map([
       ["none", new NoneFilter()],
+      ["blur", new BlurFilter()],
+      ["chromatic", new ChromaticAberrationFilter()],
+      ["crt", new CRTFilter()],
+      ["edge", new EdgeDetectionFilter()],
       ["invert", new InvertFilter()],
       ["motion", new MotionDetectionFilter()],
-      ["pixelate", new PixelateFilter()],
-      ["crt", new CRTFilter()],
-      ["rotoscope", new RotoscopeFilter()],
-      ["edge", new EdgeDetectionFilter()],
       ["nightvision", new NightVisionFilter()],
+      ["pixelate", new PixelateFilter()],
+      ["rotoscope", new RotoscopeFilter()],
+      ["sepia", new SepiaFilter()],
+      ["thermal", new ThermalFilter()],
       ["vhs", new VHSFilter()],
     ]);
 
@@ -261,6 +269,15 @@ class App {
     const filter = this.filters.get(filterType);
     if (filter === undefined) {
       return;
+    }
+
+    // Cleanup previous filter if it has a cleanup method
+    const currentFilterType = this.renderPipeline.getCurrentFilterType();
+    if (currentFilterType !== filterType) {
+      const previousFilter = this.filters.get(currentFilterType);
+      if (previousFilter?.cleanup !== undefined) {
+        previousFilter.cleanup();
+      }
     }
 
     this.renderPipeline.setFilter(filter, filterType);

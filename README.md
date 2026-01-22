@@ -13,15 +13,19 @@ Application web interactive permettant d'appliquer des filtres vidéo en temps r
 ### ✨ Fonctionnalités
 
 - **Sources multiples** : Webcam en direct ou images statiques
-- **9 filtres disponibles** :
+- **13 filtres disponibles** :
   - 🔄 **None** : Flux vidéo original sans traitement
+  - 🌫️ **Blur** : Flou doux (box blur séparable 5×5, 30-45 FPS)
+  - 🌈 **Chromatic Aberration** : Décalage RVB pour effet glitch/vintage
+  - 📺 **CRT** : Simulation d'écran cathodique vintage avec scanlines
+  - 🔍 **Edge Detection** : Détection de contours Sobel (blanc sur noir)
   - 🎨 **Invert** : Inversion des couleurs
   - 🏃 **Motion Detection** : Détection de mouvement avec heatmap
-  - 🔲 **Pixelate** : Effet de pixellisation rétro Game Boy
-  - 📺 **CRT** : Simulation d'écran cathodique vintage avec scanlines
-  - 🎬 **Rotoscope** : Effet cartoon avec quantification de couleurs
-  - 🔍 **Edge Detection** : Détection de contours Sobel (blanc sur noir)
   - 🌙 **Night Vision** : Vision nocturne avec grain et vignettage
+  - 🔲 **Pixelate** : Effet de pixellisation rétro Game Boy
+  - 🎬 **Rotoscope** : Effet cartoon avec quantification de couleurs
+  - 📜 **Sepia** : Tons sépia vintage (matrice RGB standard)
+  - 🌡️ **Thermal** : Imagerie thermique infrarouge (LUT 256 couleurs)
   - 📼 **VHS** : Effet VHS vintage avec glitches et tracking lines
 - **📥 Téléchargement d'images** : Capture instantanée du flux filtré en PNG
 - **⏸️ Pause/Play** : Mise en pause du flux vidéo pour examiner une frame
@@ -85,9 +89,11 @@ src/
 ├── core/                    # Composants principaux
 │   ├── FPSCounter.ts       # Compteur de frames par seconde
 │   └── RenderPipeline.ts   # Pipeline de rendu avec error handling
-├── filters/                 # Filtres vidéo (9 filtres)
+├── filters/                 # Filtres vidéo (13 filtres)
 │   ├── Filter.ts           # Interface de base + validation
 │   ├── NoneFilter.ts       # Pas de filtre
+│   ├── BlurFilter.ts       # Flou doux séparable (V3)
+│   ├── ChromaticAberrationFilter.ts  # Aberration chromatique (V3)
 │   ├── InvertFilter.ts     # Inversion des couleurs
 │   ├── MotionDetectionFilter.ts  # Détection de mouvement
 │   ├── PixelateFilter.ts   # Pixellisation Game Boy
@@ -95,8 +101,10 @@ src/
 │   ├── RotoscopeFilter.ts  # Rotoscopie cartoon
 │   ├── EdgeDetectionFilter.ts    # Détection de contours Sobel
 │   ├── NightVisionFilter.ts      # Vision nocturne
+│   ├── SepiaFilter.ts      # Tons sépia vintage (V3)
+│   ├── ThermalFilter.ts    # Imagerie thermique (V3)
 │   ├── VHSFilter.ts        # Effet VHS vintage
-│   └── __tests__/          # Tests unitaires des filtres
+│   └── __tests__/          # Tests unitaires (95 tests, 15 fichiers)
 ├── ui/
 │   └── SettingsOverlay.ts  # Interface de paramètres
 ├── video/
@@ -148,6 +156,24 @@ src/
 - **Husky + lint-staged** : Git hooks pour validation pre-commit
 - **GitHub Actions** : CI/CD avec pipeline de validation automatique
 
+### 🤖 Développement Assisté par IA
+
+Ce projet a été développé avec l'assistance de l'intelligence artificielle :
+
+- **Modèle d'IA** : Claude Sonnet 4.5 (Anthropic)
+- **Méthodologie** : [BMAD-method](https://github.com/brandon-schabel/bmad-method) v6.0.0-alpha.23
+- **Agent** : Quick Flow Solo Dev (Barry) - Développement autonome end-to-end
+
+L'IA a généré :
+
+- Architecture complète du projet (TypeScript strict, zero-allocation patterns)
+- 13 filtres vidéo temps réel avec optimisations Canvas 2D
+- Tests unitaires (95 tests, couverture 100% des filtres)
+- Pipeline de validation CI/CD (type-check, lint, format, tests)
+- Documentation technique et user-facing
+
+Le code respecte des standards stricts : TypeScript 5.3 strict mode, ESLint zero warnings, Prettier formatting, et performance 30-120 FPS sur flux 1080p.
+
 ### 📄 Licence
 
 Ce projet est sous licence GNU General Public License v3.0. Voir le fichier [LICENSE](LICENSE) pour plus de détails.
@@ -175,15 +201,19 @@ Interactive web application for applying real-time video filters to webcam strea
 ### ✨ Features
 
 - **Multiple sources**: Live webcam or static images
-- **9 available filters**:
+- **13 available filters**:
   - 🔄 **None**: Original video stream without processing
+  - 🌫️ **Blur**: Soft focus (5×5 separable box blur, 30-45 FPS)
+  - 🌈 **Chromatic Aberration**: RGB channel shift for glitch/vintage effect
+  - 📺 **CRT**: Vintage cathode ray tube with scanlines
+  - 🔍 **Edge Detection**: Sobel edge detection (white on black)
   - 🎨 **Invert**: Color inversion
   - 🏃 **Motion Detection**: Movement detection with heatmap
-  - 🔲 **Pixelate**: Retro Game Boy pixelation effect
-  - 📺 **CRT**: Vintage cathode ray tube with scanlines
-  - 🎬 **Rotoscope**: Cartoon effect with color quantization
-  - 🔍 **Edge Detection**: Sobel edge detection (white on black)
   - 🌙 **Night Vision**: Night vision with grain and vignetting
+  - 🔲 **Pixelate**: Retro Game Boy pixelation effect
+  - 🎬 **Rotoscope**: Cartoon effect with color quantization
+  - 📜 **Sepia**: Vintage sepia tone (standard RGB matrix)
+  - 🌡️ **Thermal**: Infrared thermal imaging (256-color LUT)
   - 📼 **VHS**: Vintage VHS with glitches and tracking lines
 - **📥 Image Download**: Instant capture of filtered stream as PNG
 - **⏸️ Pause/Play**: Pause video stream to examine a specific frame
@@ -247,9 +277,11 @@ src/
 ├── core/                    # Core components
 │   ├── FPSCounter.ts       # Frames per second counter
 │   └── RenderPipeline.ts   # Rendering pipeline with error handling
-├── filters/                 # Video filters (9 filters)
+├── filters/                 # Video filters (13 filters)
 │   ├── Filter.ts           # Base interface + validation
 │   ├── NoneFilter.ts       # No filter
+│   ├── BlurFilter.ts       # Soft focus separable blur (V3)
+│   ├── ChromaticAberrationFilter.ts  # Chromatic aberration (V3)
 │   ├── InvertFilter.ts     # Color inversion
 │   ├── MotionDetectionFilter.ts  # Motion detection
 │   ├── PixelateFilter.ts   # Game Boy pixelation
@@ -257,8 +289,10 @@ src/
 │   ├── RotoscopeFilter.ts  # Cartoon rotoscoping
 │   ├── EdgeDetectionFilter.ts    # Sobel edge detection
 │   ├── NightVisionFilter.ts      # Night vision
+│   ├── SepiaFilter.ts      # Vintage sepia tone (V3)
+│   ├── ThermalFilter.ts    # Thermal imaging (V3)
 │   ├── VHSFilter.ts        # Vintage VHS effect
-│   └── __tests__/          # Unit tests for filters
+│   └── __tests__/          # Unit tests (95 tests, 15 files)
 ├── ui/
 │   └── SettingsOverlay.ts  # Settings interface
 ├── video/
@@ -309,6 +343,24 @@ src/
 - **MarkdownLint**: Markdown file validation
 - **Husky + lint-staged**: Git hooks for pre-commit validation
 - **GitHub Actions**: CI/CD with automated validation pipeline
+
+### 🤖 AI-Assisted Development
+
+This project was developed with artificial intelligence assistance:
+
+- **AI Model**: Claude Sonnet 4.5 (Anthropic)
+- **Methodology**: [BMAD-method](https://github.com/brandon-schabel/bmad-method) v6.0.0-alpha.23
+- **Agent**: Quick Flow Solo Dev (Barry) - End-to-end autonomous development
+
+The AI generated:
+
+- Complete project architecture (strict TypeScript, zero-allocation patterns)
+- 13 real-time video filters with Canvas 2D optimizations
+- Unit tests (95 tests, 100% filter coverage)
+- CI/CD validation pipeline (type-check, lint, format, tests)
+- Technical and user-facing documentation
+
+The code follows strict standards: TypeScript 5.3 strict mode, ESLint zero warnings, Prettier formatting, and 30-120 FPS performance on 1080p streams.
 
 ### 📄 License
 

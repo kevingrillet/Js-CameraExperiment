@@ -26,6 +26,8 @@ export interface Translations {
   clickToResume: string;
   filters: {
     none: string;
+    blur: string;
+    chromatic: string;
     invert: string;
     motion: string;
     pixelate: string;
@@ -33,6 +35,8 @@ export interface Translations {
     rotoscope: string;
     edge: string;
     nightvision: string;
+    sepia: string;
+    thermal: string;
     vhs: string;
   };
   errors: {
@@ -80,13 +84,17 @@ export const translations: Record<Language, Translations> = {
     clickToResume: "Cliquez pour reprendre",
     filters: {
       none: "Aucun",
+      blur: "Flou",
+      chromatic: "Aberration chromatique",
+      crt: "CRT",
+      edge: "Détection de contours",
       invert: "Inversé",
       motion: "Détection de mouvement",
-      pixelate: "Pixelisé (Game Boy)",
-      crt: "CRT",
-      rotoscope: "Rotoscopie",
-      edge: "Détection de contours",
       nightvision: "Vision nocturne",
+      pixelate: "Pixelisé (Game Boy)",
+      rotoscope: "Rotoscopie",
+      sepia: "Sépia",
+      thermal: "Thermique",
       vhs: "VHS Vintage",
     },
     errors: {
@@ -137,13 +145,17 @@ export const translations: Record<Language, Translations> = {
     clickToResume: "Click to resume",
     filters: {
       none: "None",
+      blur: "Blur",
+      chromatic: "Chromatic Aberration",
+      crt: "CRT",
+      edge: "Edge Detection",
       invert: "Inverted",
       motion: "Motion Detection",
-      pixelate: "Pixelated (Game Boy)",
-      crt: "CRT",
-      rotoscope: "Rotoscope",
-      edge: "Edge Detection",
       nightvision: "Night Vision",
+      pixelate: "Pixelated (Game Boy)",
+      rotoscope: "Rotoscope",
+      sepia: "Sepia",
+      thermal: "Thermal",
       vhs: "VHS Vintage",
     },
     errors: {

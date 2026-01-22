@@ -4,6 +4,8 @@
 
 export type FilterType =
   | "none"
+  | "blur"
+  | "chromatic"
   | "invert"
   | "motion"
   | "pixelate"
@@ -11,6 +13,8 @@ export type FilterType =
   | "rotoscope"
   | "edge"
   | "nightvision"
+  | "sepia"
+  | "thermal"
   | "vhs";
 
 export type SourceType = "webcam" | "image";
@@ -33,12 +37,16 @@ export interface FilterMetadata {
 
 export const AVAILABLE_FILTERS: FilterMetadata[] = [
   { type: "none" },
+  { type: "blur" },
+  { type: "chromatic" },
+  { type: "crt" },
+  { type: "edge" },
   { type: "invert" },
   { type: "motion" },
-  { type: "pixelate" },
-  { type: "crt" },
-  { type: "rotoscope" },
-  { type: "edge" },
   { type: "nightvision" },
+  { type: "pixelate" },
+  { type: "rotoscope" },
+  { type: "sepia" },
+  { type: "thermal" },
   { type: "vhs" },
 ];
