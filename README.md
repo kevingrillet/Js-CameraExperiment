@@ -161,7 +161,7 @@ src/
 Ce projet a été développé avec l'assistance de l'intelligence artificielle :
 
 - **Modèle d'IA** : Claude Sonnet 4.5 (Anthropic)
-- **Méthodologie** : [BMAD-method](https://github.com/brandon-schabel/bmad-method) v6.0.0-alpha.23
+- **Méthodologie** : [BMAD-method](https://github.com/bmad-code-org/BMAD-METHOD) v6.0.0-alpha.23
 - **Agent** : Quick Flow Solo Dev (Barry) - Développement autonome end-to-end
 
 L'IA a généré :
@@ -349,7 +349,7 @@ src/
 This project was developed with artificial intelligence assistance:
 
 - **AI Model**: Claude Sonnet 4.5 (Anthropic)
-- **Methodology**: [BMAD-method](https://github.com/brandon-schabel/bmad-method) v6.0.0-alpha.23
+- **Methodology**: [BMAD-method](https://github.com/bmad-code-org/BMAD-METHOD) v6.0.0-alpha.23
 - **Agent**: Quick Flow Solo Dev (Barry) - End-to-end autonomous development
 
 The AI generated:
