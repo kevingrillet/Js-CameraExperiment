@@ -4,6 +4,7 @@
  */
 
 import { Filter, validateImageData } from "./Filter";
+import { computeSobelGradients } from "../utils/SobelOperator";
 
 export class RotoscopeFilter implements Filter {
   /**
@@ -26,6 +27,13 @@ export class RotoscopeFilter implements Filter {
    * Lower values = lighter edges, higher values = darker edges
    */
   private readonly EDGE_STRENGTH = 0.8;
+
+  /**
+   * Feature flag for Sobel utility migration
+   * Set to true to use shared SobelOperator utility
+   * Set to false to rollback to old inline implementation
+   */
+  private readonly USE_SOBEL_UTIL = true;
 
   private edgeBuffer: Uint8ClampedArray | null = null;
 
@@ -74,28 +82,59 @@ export class RotoscopeFilter implements Filter {
     width: number,
     height: number
   ): void {
-    // Sobel edge detection
-    for (let y = 1; y < height - 1; y++) {
-      for (let x = 1; x < width - 1; x++) {
-        const idx = (y * width + x) * 4;
+    if (this.USE_SOBEL_UTIL) {
+      // NEW PATH: Use shared SobelOperator utility
+      const { gx, gy } = computeSobelGradients(originalData, width, height);
 
-        // Get surrounding pixels for Sobel operator
-        const gx = this.getSobelX(originalData, x, y, width);
-        const gy = this.getSobelY(originalData, x, y, width);
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const pixelIdx = y * width + x;
+          const byteIdx = pixelIdx * 4;
 
-        // Calculate gradient magnitude
-        const magnitude = Math.sqrt(gx * gx + gy * gy);
+          // Calculate gradient magnitude
+          const magnitude = Math.sqrt(gx[pixelIdx]! ** 2 + gy[pixelIdx]! ** 2);
 
-        // If edge detected, darken the pixel
-        if (magnitude > this.EDGE_THRESHOLD) {
-          const darken = 1 - this.EDGE_STRENGTH * (magnitude / 255);
-          data[idx] = data[idx]! * darken;
-          data[idx + 1] = data[idx + 1]! * darken;
-          data[idx + 2] = data[idx + 2]! * darken;
+          // Guard against NaN/Infinity
+          const safeMagnitude = isFinite(magnitude) ? magnitude : 0;
+
+          // If edge detected, darken the pixel
+          if (safeMagnitude > this.EDGE_THRESHOLD) {
+            const darken = 1 - this.EDGE_STRENGTH * (safeMagnitude / 255);
+            data[byteIdx] = data[byteIdx]! * darken;
+            data[byteIdx + 1] = data[byteIdx + 1]! * darken;
+            data[byteIdx + 2] = data[byteIdx + 2]! * darken;
+          }
+        }
+      }
+    } else {
+      // OLD PATH (ROLLBACK AVAILABLE): Original inline implementation
+      // Sobel edge detection
+      for (let y = 1; y < height - 1; y++) {
+        for (let x = 1; x < width - 1; x++) {
+          const idx = (y * width + x) * 4;
+
+          // Get surrounding pixels for Sobel operator
+          const gx = this.getSobelX(originalData, x, y, width);
+          const gy = this.getSobelY(originalData, x, y, width);
+
+          // Calculate gradient magnitude
+          const magnitude = Math.sqrt(gx * gx + gy * gy);
+
+          // If edge detected, darken the pixel
+          if (magnitude > this.EDGE_THRESHOLD) {
+            const darken = 1 - this.EDGE_STRENGTH * (magnitude / 255);
+            data[idx] = data[idx]! * darken;
+            data[idx + 1] = data[idx + 1]! * darken;
+            data[idx + 2] = data[idx + 2]! * darken;
+          }
         }
       }
     }
   }
+
+  // ============================================================================
+  // OLD IMPLEMENTATION (KEPT FOR ROLLBACK - set USE_SOBEL_UTIL = false)
+  // ============================================================================
 
   private getGrayscale(data: Uint8ClampedArray, idx: number): number {
     return 0.299 * data[idx]! + 0.587 * data[idx + 1]! + 0.114 * data[idx + 2]!;

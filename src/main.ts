@@ -14,15 +14,19 @@ import { CanvasCapture } from "./utils/CanvasCapture";
 
 // Import all filters
 import { NoneFilter } from "./filters/NoneFilter";
+import { AsciiFilter } from "./filters/AsciiFilter";
 import { InvertFilter } from "./filters/InvertFilter";
 import { MotionDetectionFilter } from "./filters/MotionDetectionFilter";
 import { PixelateFilter } from "./filters/PixelateFilter";
 import { CRTFilter } from "./filters/CRTFilter";
 import { RotoscopeFilter } from "./filters/RotoscopeFilter";
 import { EdgeDetectionFilter } from "./filters/EdgeDetectionFilter";
+import { GlitchFilter } from "./filters/GlitchFilter";
 import { NightVisionFilter } from "./filters/NightVisionFilter";
+import { OilPaintingFilter } from "./filters/OilPaintingFilter";
 import { VHSFilter } from "./filters/VHSFilter";
 import { SepiaFilter } from "./filters/SepiaFilter";
+import { SobelRainbowFilter } from "./filters/SobelRainbowFilter";
 import { BlurFilter } from "./filters/BlurFilter";
 import { ChromaticAberrationFilter } from "./filters/ChromaticAberrationFilter";
 import { ThermalFilter } from "./filters/ThermalFilter";
@@ -49,16 +53,20 @@ class App {
     // Initialize all filters
     this.filters = new Map([
       ["none", new NoneFilter()],
+      ["ascii", new AsciiFilter()],
       ["blur", new BlurFilter()],
       ["chromatic", new ChromaticAberrationFilter()],
       ["crt", new CRTFilter()],
       ["edge", new EdgeDetectionFilter()],
+      ["glitch", new GlitchFilter()],
       ["invert", new InvertFilter()],
       ["motion", new MotionDetectionFilter()],
       ["nightvision", new NightVisionFilter()],
+      ["oilpainting", new OilPaintingFilter()],
       ["pixelate", new PixelateFilter()],
       ["rotoscope", new RotoscopeFilter()],
       ["sepia", new SepiaFilter()],
+      ["sobelrainbow", new SobelRainbowFilter()],
       ["thermal", new ThermalFilter()],
       ["vhs", new VHSFilter()],
     ]);

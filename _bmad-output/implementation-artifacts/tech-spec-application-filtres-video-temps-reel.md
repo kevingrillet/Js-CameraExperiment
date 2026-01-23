@@ -2,7 +2,7 @@
 title: 'Application de Filtres Vidéo en Temps Réel'
 slug: 'application-filtres-video-temps-reel'
 created: '2026-01-19'
-status: 'implementation-complete'
+status: 'Completed'
 stepsCompleted: [1, 2, 3, 4]
 tech_stack: ['TypeScript', 'Canvas 2D', 'MediaStream API', 'Vite', 'ES2020', 'DOM APIs']
 files_to_modify: ['src/main.ts', 'index.html']
@@ -1123,12 +1123,13 @@ Before marking any code as "done", verify:
 | Version | Features | Filter Count | Estimated Effort |
 | ------- | -------- | ------------ | --------------- |
 | **V1** ✅ | Core filters, i18n, quality gates | 9 filters | **COMPLETE** |
-| **V2** 📋 | Image download, pause/play | 9 filters | 1-2 days |
-| **V3** 📋 | High-impact filters (easy wins) | +4 filters (13 total) | 2-3 days |
-| **V4** 📋 | Medium complexity filters | +4 filters (17 total) | 3-5 days |
+| **V2** ✅ | Image download, pause/play | 9 filters | **COMPLETE** |
+| **V3** ✅ | High-impact filters (easy wins) | +4 filters (13 total) | **COMPLETE** |
+| **V4** ✅ | Medium complexity filters | +4 filters (17 total) | **COMPLETE** |
 | **V5** 📋 | Advanced show-off filters | +4 filters (21 total) | 4-6 days |
 
-**Total V1-V5**: 21 unique filters + download/pause controls
+**Completed (V1-V4)**: 17 unique filters + download/pause controls  
+**Total Planned (V1-V5)**: 21 unique filters + download/pause controls
 
 **Future Considerations Beyond V5**:
 

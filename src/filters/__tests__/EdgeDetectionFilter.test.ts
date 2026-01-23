@@ -155,4 +155,50 @@ describe("EdgeDetectionFilter", () => {
       expect(result.data[i + 1]).toBe(result.data[i + 2]);
     }
   });
+
+  it("should support rollback to old Sobel implementation (H3 AC3 rollback validation)", () => {
+    // Test that the old code path still works if USE_SOBEL_UTIL is set to false
+    // This validates the F4 CRITICAL feature flag adapter pattern
+
+    // Create test filter instance
+    const rollbackFilter = new EdgeDetectionFilter();
+
+    // Manually override the USE_SOBEL_UTIL flag via type assertion
+    (rollbackFilter as unknown as { USE_SOBEL_UTIL: boolean }).USE_SOBEL_UTIL =
+      false;
+
+    const imageData = {
+      width: 10,
+      height: 10,
+      data: new Uint8ClampedArray(10 * 10 * 4),
+    } as ImageData;
+
+    // Create vertical edge
+    for (let y = 0; y < 10; y++) {
+      for (let x = 0; x < 10; x++) {
+        const i = (y * 10 + x) * 4;
+        const value = x < 5 ? 0 : 255;
+        imageData.data[i] = value;
+        imageData.data[i + 1] = value;
+        imageData.data[i + 2] = value;
+        imageData.data[i + 3] = 255;
+      }
+    }
+
+    // Should work with old implementation
+    const result = rollbackFilter.apply(imageData);
+
+    // Edge should still be detected
+    let edgePixelsFound = 0;
+    for (let y = 1; y < 9; y++) {
+      for (let x = 4; x <= 6; x++) {
+        const i = (y * 10 + x) * 4;
+        if (result.data[i] === 255) {
+          edgePixelsFound++;
+        }
+      }
+    }
+
+    expect(edgePixelsFound).toBeGreaterThan(0);
+  });
 });

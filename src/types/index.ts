@@ -15,7 +15,11 @@ export type FilterType =
   | "nightvision"
   | "sepia"
   | "thermal"
-  | "vhs";
+  | "vhs"
+  | "ascii"
+  | "glitch"
+  | "oilpainting"
+  | "sobelrainbow";
 
 export type SourceType = "webcam" | "image";
 
@@ -37,16 +41,20 @@ export interface FilterMetadata {
 
 export const AVAILABLE_FILTERS: FilterMetadata[] = [
   { type: "none" },
+  { type: "ascii" },
   { type: "blur" },
   { type: "chromatic" },
   { type: "crt" },
   { type: "edge" },
+  { type: "glitch" },
   { type: "invert" },
   { type: "motion" },
   { type: "nightvision" },
+  { type: "oilpainting" },
   { type: "pixelate" },
   { type: "rotoscope" },
   { type: "sepia" },
+  { type: "sobelrainbow" },
   { type: "thermal" },
   { type: "vhs" },
 ];

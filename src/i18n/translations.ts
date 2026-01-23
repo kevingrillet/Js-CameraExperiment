@@ -26,6 +26,7 @@ export interface Translations {
   clickToResume: string;
   filters: {
     none: string;
+    ascii: string;
     blur: string;
     chromatic: string;
     invert: string;
@@ -34,8 +35,11 @@ export interface Translations {
     crt: string;
     rotoscope: string;
     edge: string;
+    glitch: string;
     nightvision: string;
+    oilpainting: string;
     sepia: string;
+    sobelrainbow: string;
     thermal: string;
     vhs: string;
   };
@@ -84,16 +88,20 @@ export const translations: Record<Language, Translations> = {
     clickToResume: "Cliquez pour reprendre",
     filters: {
       none: "Aucun",
+      ascii: "Art ASCII",
       blur: "Flou",
       chromatic: "Aberration chromatique",
       crt: "CRT",
       edge: "Détection de contours",
+      glitch: "Glitch / Datamosh",
       invert: "Inversé",
       motion: "Détection de mouvement",
       nightvision: "Vision nocturne",
+      oilpainting: "Peinture à l'huile",
       pixelate: "Pixelisé (Game Boy)",
       rotoscope: "Rotoscopie",
       sepia: "Sépia",
+      sobelrainbow: "Sobel arc-en-ciel",
       thermal: "Thermique",
       vhs: "VHS Vintage",
     },
@@ -145,16 +153,20 @@ export const translations: Record<Language, Translations> = {
     clickToResume: "Click to resume",
     filters: {
       none: "None",
+      ascii: "ASCII Art",
       blur: "Blur",
       chromatic: "Chromatic Aberration",
       crt: "CRT",
       edge: "Edge Detection",
+      glitch: "Glitch / Datamosh",
       invert: "Inverted",
       motion: "Motion Detection",
       nightvision: "Night Vision",
+      oilpainting: "Oil Painting",
       pixelate: "Pixelated (Game Boy)",
       rotoscope: "Rotoscope",
       sepia: "Sepia",
+      sobelrainbow: "Sobel Rainbow",
       thermal: "Thermal",
       vhs: "VHS Vintage",
     },

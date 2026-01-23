@@ -13,18 +13,22 @@ Application web interactive permettant d'appliquer des filtres vidéo en temps r
 ### ✨ Fonctionnalités
 
 - **Sources multiples** : Webcam en direct ou images statiques
-- **13 filtres disponibles** :
+- **17 filtres disponibles** :
   - 🔄 **None** : Flux vidéo original sans traitement
+  - 🖥️ **ASCII Art** : Conversion vidéo en art ASCII style Matrix (cellules 8×8 pixels, bitmap font pré-rendu, 9 niveaux de densité `.:-=+*#%@`, 40+ FPS grâce à la pré-génération des glyphes)
   - 🌫️ **Blur** : Flou doux (box blur séparable 5×5, 30-45 FPS)
   - 🌈 **Chromatic Aberration** : Décalage RVB pour effet glitch/vintage
   - 📺 **CRT** : Simulation d'écran cathodique vintage avec scanlines
   - 🔍 **Edge Detection** : Détection de contours Sobel (blanc sur noir)
+  - 🔀 **Glitch / Datamosh** : Corruption digitale avec artefacts temporels (line shifts, RGB channel separation, block corruption, FIFO cap 50 glitches max pour éviter memory leaks)
   - 🎨 **Invert** : Inversion des couleurs
   - 🏃 **Motion Detection** : Détection de mouvement avec heatmap
   - 🌙 **Night Vision** : Vision nocturne avec grain et vignettage
+  - 🎨 **Oil Painting** : Effet peinture à l'huile (posterisation 32 niveaux + bilateral blur 3×3 simplifié pour préserver les contours, 25-30 FPS @ 1080p)
   - 🔲 **Pixelate** : Effet de pixellisation rétro Game Boy
   - 🎬 **Rotoscope** : Effet cartoon avec quantification de couleurs
   - 📜 **Sepia** : Tons sépia vintage (matrice RGB standard)
+  - 🌈 **Sobel Rainbow** : Détection de contours colorés par orientation (HSL hue mapping basé sur l'angle d'edge, Sobel operator extrait en utilitaire partagé, 30+ FPS)
   - 🌡️ **Thermal** : Imagerie thermique infrarouge (LUT 256 couleurs)
   - 📼 **VHS** : Effet VHS vintage avec glitches et tracking lines
 - **📥 Téléchargement d'images** : Capture instantanée du flux filtré en PNG
@@ -89,22 +93,26 @@ src/
 ├── core/                    # Composants principaux
 │   ├── FPSCounter.ts       # Compteur de frames par seconde
 │   └── RenderPipeline.ts   # Pipeline de rendu avec error handling
-├── filters/                 # Filtres vidéo (13 filtres)
+├── filters/                 # Filtres vidéo (17 filtres)
 │   ├── Filter.ts           # Interface de base + validation
 │   ├── NoneFilter.ts       # Pas de filtre
+│   ├── AsciiFilter.ts      # Rendu ASCII avec bitmap font
 │   ├── BlurFilter.ts       # Flou doux séparable (V3)
 │   ├── ChromaticAberrationFilter.ts  # Aberration chromatique (V3)
 │   ├── InvertFilter.ts     # Inversion des couleurs
+│   ├── GlitchFilter.ts     # Glitch/Datamosh avec artefacts temporels
 │   ├── MotionDetectionFilter.ts  # Détection de mouvement
+│   ├── OilPaintingFilter.ts      # Peinture à l'huile avec bilateral blur
 │   ├── PixelateFilter.ts   # Pixellisation Game Boy
 │   ├── CRTFilter.ts        # Effet CRT avec scanlines
 │   ├── RotoscopeFilter.ts  # Rotoscopie cartoon
 │   ├── EdgeDetectionFilter.ts    # Détection de contours Sobel
 │   ├── NightVisionFilter.ts      # Vision nocturne
 │   ├── SepiaFilter.ts      # Tons sépia vintage (V3)
+│   ├── SobelRainbowFilter.ts     # Sobel avec mapping HSL
 │   ├── ThermalFilter.ts    # Imagerie thermique (V3)
 │   ├── VHSFilter.ts        # Effet VHS vintage
-│   └── __tests__/          # Tests unitaires (95 tests, 15 fichiers)
+│   └── __tests__/          # Tests unitaires (131 tests, 20 fichiers)
 ├── ui/
 │   └── SettingsOverlay.ts  # Interface de paramètres
 ├── video/
@@ -112,6 +120,7 @@ src/
 ├── utils/
 │   ├── CanvasCapture.ts    # Capture et téléchargement d'images
 │   ├── Logger.ts           # Logging centralisé (dev-only)
+│   ├── SobelOperator.ts    # Utility Sobel partagé (extraction V4)
 │   └── __tests__/          # Tests unitaires des utilitaires
 ├── i18n/
 │   └── translations.ts     # Traductions FR/EN
@@ -167,8 +176,8 @@ Ce projet a été développé avec l'assistance de l'intelligence artificielle :
 L'IA a généré :
 
 - Architecture complète du projet (TypeScript strict, zero-allocation patterns)
-- 13 filtres vidéo temps réel avec optimisations Canvas 2D
-- Tests unitaires (95 tests, couverture 100% des filtres)
+- 17 filtres vidéo temps réel avec optimisations Canvas 2D
+- Tests unitaires (131 tests, couverture 100% des filtres)
 - Pipeline de validation CI/CD (type-check, lint, format, tests)
 - Documentation technique et user-facing
 
@@ -201,18 +210,22 @@ Interactive web application for applying real-time video filters to webcam strea
 ### ✨ Features
 
 - **Multiple sources**: Live webcam or static images
-- **13 available filters**:
+- **17 available filters**:
   - 🔄 **None**: Original video stream without processing
+  - 🖥️ **ASCII Art**: 8×8 ASCII rendering with pre-rendered bitmap font (40+ FPS)
   - 🌫️ **Blur**: Soft focus (5×5 separable box blur, 30-45 FPS)
   - 🌈 **Chromatic Aberration**: RGB channel shift for glitch/vintage effect
   - 📺 **CRT**: Vintage cathode ray tube with scanlines
   - 🔍 **Edge Detection**: Sobel edge detection (white on black)
+  - 🔀 **Glitch / Datamosh**: Digital corruption with temporal artifacts (FIFO cap 50)
   - 🎨 **Invert**: Color inversion
   - 🏃 **Motion Detection**: Movement detection with heatmap
   - 🌙 **Night Vision**: Night vision with grain and vignetting
+  - 🎨 **Oil Painting**: Oil painting effect (32 levels, 3×3 bilateral blur, 25+ FPS)
   - 🔲 **Pixelate**: Retro Game Boy pixelation effect
   - 🎬 **Rotoscope**: Cartoon effect with color quantization
   - 📜 **Sepia**: Vintage sepia tone (standard RGB matrix)
+  - 🌈 **Sobel Rainbow**: Edge detection with HSL color mapping (30+ FPS)
   - 🌡️ **Thermal**: Infrared thermal imaging (256-color LUT)
   - 📼 **VHS**: Vintage VHS with glitches and tracking lines
 - **📥 Image Download**: Instant capture of filtered stream as PNG
@@ -277,22 +290,26 @@ src/
 ├── core/                    # Core components
 │   ├── FPSCounter.ts       # Frames per second counter
 │   └── RenderPipeline.ts   # Rendering pipeline with error handling
-├── filters/                 # Video filters (13 filters)
+├── filters/                 # Video filters (17 filters)
 │   ├── Filter.ts           # Base interface + validation
 │   ├── NoneFilter.ts       # No filter
+│   ├── AsciiFilter.ts      # ASCII rendering with bitmap font
 │   ├── BlurFilter.ts       # Soft focus separable blur (V3)
 │   ├── ChromaticAberrationFilter.ts  # Chromatic aberration (V3)
 │   ├── InvertFilter.ts     # Color inversion
+│   ├── GlitchFilter.ts     # Glitch/Datamosh with temporal artifacts
 │   ├── MotionDetectionFilter.ts  # Motion detection
+│   ├── OilPaintingFilter.ts      # Oil painting with bilateral blur
 │   ├── PixelateFilter.ts   # Game Boy pixelation
 │   ├── CRTFilter.ts        # CRT effect with scanlines
 │   ├── RotoscopeFilter.ts  # Cartoon rotoscoping
 │   ├── EdgeDetectionFilter.ts    # Sobel edge detection
 │   ├── NightVisionFilter.ts      # Night vision
 │   ├── SepiaFilter.ts      # Vintage sepia tone (V3)
+│   ├── SobelRainbowFilter.ts     # Sobel with HSL mapping
 │   ├── ThermalFilter.ts    # Thermal imaging (V3)
 │   ├── VHSFilter.ts        # Vintage VHS effect
-│   └── __tests__/          # Unit tests (95 tests, 15 files)
+│   └── __tests__/          # Unit tests (131 tests, 20 files)
 ├── ui/
 │   └── SettingsOverlay.ts  # Settings interface
 ├── video/
@@ -300,6 +317,7 @@ src/
 ├── utils/
 │   ├── CanvasCapture.ts    # Canvas capture and download
 │   ├── Logger.ts           # Centralized logging (dev-only)
+│   ├── SobelOperator.ts    # Shared Sobel utility (V4 extraction)
 │   └── __tests__/          # Unit tests for utilities
 ├── i18n/
 │   └── translations.ts     # FR/EN translations
@@ -355,8 +373,8 @@ This project was developed with artificial intelligence assistance:
 The AI generated:
 
 - Complete project architecture (strict TypeScript, zero-allocation patterns)
-- 13 real-time video filters with Canvas 2D optimizations
-- Unit tests (95 tests, 100% filter coverage)
+- 17 real-time video filters with Canvas 2D optimizations
+- Unit tests (131 tests, 100% filter coverage)
 - CI/CD validation pipeline (type-check, lint, format, tests)
 - Technical and user-facing documentation
 

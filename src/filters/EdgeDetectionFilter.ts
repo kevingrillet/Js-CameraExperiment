@@ -4,6 +4,7 @@
  */
 
 import { Filter, validateImageData } from "./Filter";
+import { computeSobelGradients } from "../utils/SobelOperator";
 
 export class EdgeDetectionFilter implements Filter {
   /**
@@ -12,6 +13,13 @@ export class EdgeDetectionFilter implements Filter {
    * Lower values = more edges detected (noisier), higher values = only strongest edges
    */
   private readonly EDGE_THRESHOLD = 50;
+
+  /**
+   * Feature flag for Sobel utility migration
+   * Set to true to use shared SobelOperator utility
+   * Set to false to rollback to old inline implementation
+   */
+  private readonly USE_SOBEL_UTIL = true;
 
   private sobelBuffer: Uint8ClampedArray | null = null;
 
@@ -28,36 +36,68 @@ export class EdgeDetectionFilter implements Filter {
     const width = imageData.width;
     const height = imageData.height;
 
-    // Create a copy for edge detection calculations - reuse buffer
-    if (this.sobelBuffer?.length !== data.length) {
-      this.sobelBuffer = new Uint8ClampedArray(data.length);
-    }
-    this.sobelBuffer.set(data);
+    if (this.USE_SOBEL_UTIL) {
+      // NEW PATH: Use shared SobelOperator utility
+      const { gx, gy } = computeSobelGradients(data, width, height);
 
-    // Process each pixel
-    for (let y = 1; y < height - 1; y++) {
-      for (let x = 1; x < width - 1; x++) {
-        const idx = (y * width + x) * 4;
+      // Process each pixel
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const pixelIdx = y * width + x;
+          const byteIdx = pixelIdx * 4;
 
-        // Calculate Sobel gradients
-        const gx = this.getSobelX(this.sobelBuffer, x, y, width);
-        const gy = this.getSobelY(this.sobelBuffer, x, y, width);
+          // Calculate gradient magnitude
+          const magnitude = Math.sqrt(gx[pixelIdx]! ** 2 + gy[pixelIdx]! ** 2);
 
-        // Calculate gradient magnitude
-        const magnitude = Math.sqrt(gx * gx + gy * gy);
+          // Guard against NaN/Infinity
+          const safeMagnitude = isFinite(magnitude) ? magnitude : 0;
 
-        // Set pixel to white if edge detected, black otherwise
-        const edgeValue = magnitude > this.EDGE_THRESHOLD ? 255 : 0;
+          // Set pixel to white if edge detected, black otherwise
+          const edgeValue = safeMagnitude > this.EDGE_THRESHOLD ? 255 : 0;
 
-        data[idx] = edgeValue; // R
-        data[idx + 1] = edgeValue; // G
-        data[idx + 2] = edgeValue; // B
-        // Alpha stays at 255
+          data[byteIdx] = edgeValue; // R
+          data[byteIdx + 1] = edgeValue; // G
+          data[byteIdx + 2] = edgeValue; // B
+          // Alpha stays at 255
+        }
+      }
+    } else {
+      // OLD PATH (ROLLBACK AVAILABLE): Original inline implementation
+      // Create a copy for edge detection calculations - reuse buffer
+      if (this.sobelBuffer?.length !== data.length) {
+        this.sobelBuffer = new Uint8ClampedArray(data.length);
+      }
+      this.sobelBuffer.set(data);
+
+      // Process each pixel
+      for (let y = 1; y < height - 1; y++) {
+        for (let x = 1; x < width - 1; x++) {
+          const idx = (y * width + x) * 4;
+
+          // Calculate Sobel gradients
+          const gx = this.getSobelX(this.sobelBuffer, x, y, width);
+          const gy = this.getSobelY(this.sobelBuffer, x, y, width);
+
+          // Calculate gradient magnitude
+          const magnitude = Math.sqrt(gx * gx + gy * gy);
+
+          // Set pixel to white if edge detected, black otherwise
+          const edgeValue = magnitude > this.EDGE_THRESHOLD ? 255 : 0;
+
+          data[idx] = edgeValue; // R
+          data[idx + 1] = edgeValue; // G
+          data[idx + 2] = edgeValue; // B
+          // Alpha stays at 255
+        }
       }
     }
 
     return imageData;
   }
+
+  // ============================================================================
+  // OLD IMPLEMENTATION (KEPT FOR ROLLBACK - set USE_SOBEL_UTIL = false)
+  // ============================================================================
 
   private getGrayscale(data: Uint8ClampedArray, idx: number): number {
     return 0.299 * data[idx]! + 0.587 * data[idx + 1]! + 0.114 * data[idx + 2]!;

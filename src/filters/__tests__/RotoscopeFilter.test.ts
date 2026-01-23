@@ -181,4 +181,52 @@ describe("RotoscopeFilter", () => {
 
     expect(resultAlpha).toEqual(originalAlpha);
   });
+
+  it("should support rollback to old Sobel implementation (H3 AC4 rollback validation)", () => {
+    // Test that the old code path still works if USE_SOBEL_UTIL is set to false
+    // This validates the F4 CRITICAL feature flag adapter pattern
+
+    // Create test filter instance
+    const rollbackFilter = new RotoscopeFilter();
+
+    // Manually override the USE_SOBEL_UTIL flag via type assertion
+    (rollbackFilter as unknown as { USE_SOBEL_UTIL: boolean }).USE_SOBEL_UTIL =
+      false;
+
+    const imageData = {
+      width: 10,
+      height: 10,
+      data: new Uint8ClampedArray(10 * 10 * 4),
+    } as ImageData;
+
+    // Create vertical edge
+    for (let y = 0; y < 10; y++) {
+      for (let x = 0; x < 10; x++) {
+        const i = (y * 10 + x) * 4;
+        const value = x < 5 ? 0 : 200;
+        imageData.data[i] = value;
+        imageData.data[i + 1] = value;
+        imageData.data[i + 2] = value;
+        imageData.data[i + 3] = 255;
+      }
+    }
+
+    // Should work with old implementation
+    const result = rollbackFilter.apply(imageData);
+
+    // Edge should still be darkened (cartoon effect)
+    const edgeIdx = (5 * 10 + 5) * 4;
+    const farIdx = (5 * 10 + 8) * 4;
+
+    const edgeBrightness =
+      (result.data[edgeIdx] ?? 0) +
+      (result.data[edgeIdx + 1] ?? 0) +
+      (result.data[edgeIdx + 2] ?? 0);
+    const farBrightness =
+      (result.data[farIdx] ?? 0) +
+      (result.data[farIdx + 1] ?? 0) +
+      (result.data[farIdx + 2] ?? 0);
+
+    expect(edgeBrightness).toBeLessThan(farBrightness);
+  });
 });
