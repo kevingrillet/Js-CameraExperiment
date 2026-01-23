@@ -2,8 +2,8 @@
 title: 'Download & Pause Controls for Camera Experiment'
 slug: 'v2-download-pause-controls'
 created: '2026-01-21'
-status: 'ready-for-dev'
-stepsCompleted: [1, 2, 3, 4]
+status: 'Completed'
+stepsCompleted: [1, 2, 3, 4, 5]
 tech_stack: ['TypeScript 5.3.3', 'Canvas 2D API', 'Blob API', 'Keyboard Events', 'Vite 7.3.1', 'RequestAnimationFrame']
 files_to_modify: ['src/ui/SettingsOverlay.ts', 'src/core/RenderPipeline.ts', 'src/main.ts', 'src/i18n/translations.ts', 'src/types/index.ts', 'index.html']
 code_patterns: ['Module-based classes with private state', 'TypeScript strict mode with no any', 'Event-driven callbacks pattern', 'Auto-hide UI with mouseleave/mouseenter', 'Centralized Logger utility', 'I18n singleton pattern', 'Error recovery with consecutive error tracking']
