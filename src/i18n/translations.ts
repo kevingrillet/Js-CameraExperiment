@@ -29,19 +29,23 @@ export interface Translations {
     ascii: string;
     blur: string;
     chromatic: string;
-    invert: string;
-    motion: string;
-    pixelate: string;
+    comicbook: string;
     crt: string;
-    rotoscope: string;
+    dof: string;
     edge: string;
     glitch: string;
+    invert: string;
+    kaleidoscope: string;
+    motion: string;
     nightvision: string;
     oilpainting: string;
+    pixelate: string;
+    rotoscope: string;
     sepia: string;
     sobelrainbow: string;
     thermal: string;
     vhs: string;
+    vignette: string;
   };
   errors: {
     accessDenied: string;
@@ -91,10 +95,13 @@ export const translations: Record<Language, Translations> = {
       ascii: "Art ASCII",
       blur: "Flou",
       chromatic: "Aberration chromatique",
+      comicbook: "Comic Book / Halftone",
       crt: "CRT",
+      dof: "Profondeur de champ (DoF)",
       edge: "Détection de contours",
       glitch: "Glitch / Datamosh",
       invert: "Inversé",
+      kaleidoscope: "Kaléidoscope",
       motion: "Détection de mouvement",
       nightvision: "Vision nocturne",
       oilpainting: "Peinture à l'huile",
@@ -104,6 +111,7 @@ export const translations: Record<Language, Translations> = {
       sobelrainbow: "Sobel arc-en-ciel",
       thermal: "Thermique",
       vhs: "VHS Vintage",
+      vignette: "Vignette artistique",
     },
     errors: {
       accessDenied:
@@ -156,10 +164,13 @@ export const translations: Record<Language, Translations> = {
       ascii: "ASCII Art",
       blur: "Blur",
       chromatic: "Chromatic Aberration",
+      comicbook: "Comic Book / Halftone",
       crt: "CRT",
+      dof: "Depth of Field (DoF)",
       edge: "Edge Detection",
       glitch: "Glitch / Datamosh",
       invert: "Inverted",
+      kaleidoscope: "Kaleidoscope",
       motion: "Motion Detection",
       nightvision: "Night Vision",
       oilpainting: "Oil Painting",
@@ -169,6 +180,7 @@ export const translations: Record<Language, Translations> = {
       sobelrainbow: "Sobel Rainbow",
       thermal: "Thermal",
       vhs: "VHS Vintage",
+      vignette: "Artistic Vignette",
     },
     errors: {
       accessDenied:

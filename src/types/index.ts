@@ -6,7 +6,10 @@ export type FilterType =
   | "none"
   | "blur"
   | "chromatic"
+  | "comicbook"
+  | "dof"
   | "invert"
+  | "kaleidoscope"
   | "motion"
   | "pixelate"
   | "crt"
@@ -16,6 +19,7 @@ export type FilterType =
   | "sepia"
   | "thermal"
   | "vhs"
+  | "vignette"
   | "ascii"
   | "glitch"
   | "oilpainting"
@@ -44,10 +48,13 @@ export const AVAILABLE_FILTERS: FilterMetadata[] = [
   { type: "ascii" },
   { type: "blur" },
   { type: "chromatic" },
+  { type: "comicbook" },
   { type: "crt" },
+  { type: "dof" },
   { type: "edge" },
   { type: "glitch" },
   { type: "invert" },
+  { type: "kaleidoscope" },
   { type: "motion" },
   { type: "nightvision" },
   { type: "oilpainting" },
@@ -57,4 +64,5 @@ export const AVAILABLE_FILTERS: FilterMetadata[] = [
   { type: "sobelrainbow" },
   { type: "thermal" },
   { type: "vhs" },
+  { type: "vignette" },
 ];

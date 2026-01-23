@@ -13,15 +13,18 @@ Application web interactive permettant d'appliquer des filtres vidéo en temps r
 ### ✨ Fonctionnalités
 
 - **Sources multiples** : Webcam en direct ou images statiques
-- **17 filtres disponibles** :
+- **21 filtres disponibles** :
   - 🔄 **None** : Flux vidéo original sans traitement
   - 🖥️ **ASCII Art** : Conversion vidéo en art ASCII style Matrix (cellules 8×8 pixels, bitmap font pré-rendu, 9 niveaux de densité `.:-=+*#%@`, 40+ FPS grâce à la pré-génération des glyphes)
   - 🌫️ **Blur** : Flou doux (box blur séparable 5×5, 30-45 FPS)
   - 🌈 **Chromatic Aberration** : Décalage RVB pour effet glitch/vintage
-  - 📺 **CRT** : Simulation d'écran cathodique vintage avec scanlines
+  - 📰 **Comic Book / Halftone** : Style bande dessinée avec posterisation et contours épais
+  - 📷 **CRT** : Simulation d'écran cathodique vintage avec scanlines
+  - 📷 **Profondeur de champ (DoF)** : Simulation bokeh avec flou progressif
   - 🔍 **Edge Detection** : Détection de contours Sobel (blanc sur noir)
   - 🔀 **Glitch / Datamosh** : Corruption digitale avec artefacts temporels (line shifts, RGB channel separation, block corruption, FIFO cap 50 glitches max pour éviter memory leaks)
   - 🎨 **Invert** : Inversion des couleurs
+  - 🔮 **Kaléidoscope** : Symétrie radiale avec 6 segments miroir
   - 🏃 **Motion Detection** : Détection de mouvement avec heatmap
   - 🌙 **Night Vision** : Vision nocturne avec grain et vignettage
   - 🎨 **Oil Painting** : Effet peinture à l'huile (posterisation 32 niveaux + bilateral blur 3×3 simplifié pour préserver les contours, 25-30 FPS @ 1080p)
@@ -31,6 +34,7 @@ Application web interactive permettant d'appliquer des filtres vidéo en temps r
   - 🌈 **Sobel Rainbow** : Détection de contours colorés par orientation (HSL hue mapping basé sur l'angle d'edge, Sobel operator extrait en utilitaire partagé, 30+ FPS)
   - 🌡️ **Thermal** : Imagerie thermique infrarouge (LUT 256 couleurs)
   - 📼 **VHS** : Effet VHS vintage avec glitches et tracking lines
+  - 🎭 **Vignette artistique** : Assombrissement radial pour effet spotlight
 - **📥 Téléchargement d'images** : Capture instantanée du flux filtré en PNG
 - **⏸️ Pause/Play** : Mise en pause du flux vidéo pour examiner une frame
 - **⌨️ Raccourcis clavier** : Barre d'espace (pause/play), S (télécharger)
@@ -93,7 +97,7 @@ src/
 ├── core/                    # Composants principaux
 │   ├── FPSCounter.ts       # Compteur de frames par seconde
 │   └── RenderPipeline.ts   # Pipeline de rendu avec error handling
-├── filters/                 # Filtres vidéo (17 filtres)
+├── filters/                 # Filtres vidéo (21 filtres)
 │   ├── Filter.ts           # Interface de base + validation
 │   ├── NoneFilter.ts       # Pas de filtre
 │   ├── AsciiFilter.ts      # Rendu ASCII avec bitmap font
@@ -176,7 +180,7 @@ Ce projet a été développé avec l'assistance de l'intelligence artificielle :
 L'IA a généré :
 
 - Architecture complète du projet (TypeScript strict, zero-allocation patterns)
-- 17 filtres vidéo temps réel avec optimisations Canvas 2D
+- 21 filtres vidéo temps réel avec optimisations Canvas 2D
 - Tests unitaires (131 tests, couverture 100% des filtres)
 - Pipeline de validation CI/CD (type-check, lint, format, tests)
 - Documentation technique et user-facing
@@ -210,15 +214,18 @@ Interactive web application for applying real-time video filters to webcam strea
 ### ✨ Features
 
 - **Multiple sources**: Live webcam or static images
-- **17 available filters**:
+- **21 available filters**:
   - 🔄 **None**: Original video stream without processing
   - 🖥️ **ASCII Art**: 8×8 ASCII rendering with pre-rendered bitmap font (40+ FPS)
   - 🌫️ **Blur**: Soft focus (5×5 separable box blur, 30-45 FPS)
   - 🌈 **Chromatic Aberration**: RGB channel shift for glitch/vintage effect
+  - 📰 **Comic Book / Halftone**: Comic book style with posterization and thick outlines
   - 📺 **CRT**: Vintage cathode ray tube with scanlines
+  - 📷 **Depth of Field (DoF)**: Bokeh simulation with progressive blur
   - 🔍 **Edge Detection**: Sobel edge detection (white on black)
   - 🔀 **Glitch / Datamosh**: Digital corruption with temporal artifacts (FIFO cap 50)
   - 🎨 **Invert**: Color inversion
+  - 🔮 **Kaleidoscope**: Radial symmetry with 6 mirrored segments
   - 🏃 **Motion Detection**: Movement detection with heatmap
   - 🌙 **Night Vision**: Night vision with grain and vignetting
   - 🎨 **Oil Painting**: Oil painting effect (32 levels, 3×3 bilateral blur, 25+ FPS)
@@ -228,6 +235,7 @@ Interactive web application for applying real-time video filters to webcam strea
   - 🌈 **Sobel Rainbow**: Edge detection with HSL color mapping (30+ FPS)
   - 🌡️ **Thermal**: Infrared thermal imaging (256-color LUT)
   - 📼 **VHS**: Vintage VHS with glitches and tracking lines
+  - 🎭 **Artistic Vignette**: Radial darkening for spotlight effect
 - **📥 Image Download**: Instant capture of filtered stream as PNG
 - **⏸️ Pause/Play**: Pause video stream to examine a specific frame
 - **⌨️ Keyboard Shortcuts**: Spacebar (pause/play), S (download)

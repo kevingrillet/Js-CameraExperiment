@@ -30,6 +30,10 @@ import { SobelRainbowFilter } from "./filters/SobelRainbowFilter";
 import { BlurFilter } from "./filters/BlurFilter";
 import { ChromaticAberrationFilter } from "./filters/ChromaticAberrationFilter";
 import { ThermalFilter } from "./filters/ThermalFilter";
+import { ComicBookFilter } from "./filters/ComicBookFilter";
+import { DepthOfFieldFilter } from "./filters/DepthOfFieldFilter";
+import { KaleidoscopeFilter } from "./filters/KaleidoscopeFilter";
+import { VignetteFilter } from "./filters/VignetteFilter";
 
 import type { FilterType } from "./types";
 import type { Filter } from "./filters/Filter";
@@ -56,10 +60,13 @@ class App {
       ["ascii", new AsciiFilter()],
       ["blur", new BlurFilter()],
       ["chromatic", new ChromaticAberrationFilter()],
+      ["comicbook", new ComicBookFilter()],
       ["crt", new CRTFilter()],
+      ["dof", new DepthOfFieldFilter()],
       ["edge", new EdgeDetectionFilter()],
       ["glitch", new GlitchFilter()],
       ["invert", new InvertFilter()],
+      ["kaleidoscope", new KaleidoscopeFilter()],
       ["motion", new MotionDetectionFilter()],
       ["nightvision", new NightVisionFilter()],
       ["oilpainting", new OilPaintingFilter()],
@@ -69,6 +76,7 @@ class App {
       ["sobelrainbow", new SobelRainbowFilter()],
       ["thermal", new ThermalFilter()],
       ["vhs", new VHSFilter()],
+      ["vignette", new VignetteFilter()],
     ]);
 
     // Get canvas element
