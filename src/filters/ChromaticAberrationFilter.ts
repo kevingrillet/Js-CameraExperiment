@@ -15,11 +15,11 @@ import { Filter, validateImageData } from "./Filter";
 
 export class ChromaticAberrationFilter implements Filter {
   /**
-   * Pixel offset for channel shifting
-   * Value of 3 provides visible aberration without excessive distortion
+   * Pixel offset for channel shifting (1-10)
+   * Default: 3 provides visible aberration without excessive distortion
    * Higher values create more dramatic glitch effects but may degrade image quality
    */
-  private readonly OFFSET_PIXELS = 3;
+  private offset = 3;
 
   /**
    * Temporary buffer for channel shifting
@@ -54,8 +54,8 @@ export class ChromaticAberrationFilter implements Filter {
         const i = (y * width + x) * 4;
 
         // Red channel: shift LEFT and UP
-        const redX = Math.max(0, x - this.OFFSET_PIXELS);
-        const redY = Math.max(0, y - this.OFFSET_PIXELS);
+        const redX = Math.max(0, x - this.offset);
+        const redY = Math.max(0, y - this.offset);
         const redIndex = (redY * width + redX) * 4;
         data[i] = this.tempBuffer[redIndex] ?? 0;
 
@@ -63,8 +63,8 @@ export class ChromaticAberrationFilter implements Filter {
         data[i + 1] = this.tempBuffer[i + 1] ?? 0;
 
         // Blue channel: shift RIGHT and DOWN
-        const blueX = Math.min(width - 1, x + this.OFFSET_PIXELS);
-        const blueY = Math.min(height - 1, y + this.OFFSET_PIXELS);
+        const blueX = Math.min(width - 1, x + this.offset);
+        const blueY = Math.min(height - 1, y + this.offset);
         const blueIndex = (blueY * width + blueX) * 4;
         data[i + 2] = this.tempBuffer[blueIndex + 2] ?? 0;
 
@@ -74,6 +74,24 @@ export class ChromaticAberrationFilter implements Filter {
     }
 
     return imageData;
+  }
+
+  /**
+   * Set filter parameters
+   * @param params - Partial parameters to update
+   */
+  setParameters(params: Record<string, number>): void {
+    if (params["offset"] !== undefined) {
+      this.offset = Math.max(1, Math.min(10, Math.floor(params["offset"])));
+    }
+  }
+
+  /**
+   * Get default parameter values
+   * @returns Default parameters object
+   */
+  getDefaultParameters(): Record<string, number> {
+    return { offset: 3 };
   }
 
   /**

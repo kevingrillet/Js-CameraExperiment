@@ -7,26 +7,26 @@ import { Filter, validateImageData } from "./Filter";
 
 export class OilPaintingFilter implements Filter {
   /**
-   * Number of posterization levels per RGB channel (3 bits)
-   * 8 levels provides strong oil painting effect with visible color banding
+   * Number of posterization levels per RGB channel (4-16)
+   * Default: 8 provides strong oil painting effect with visible color banding
    * Lower values = more aggressive posterization, may show visible banding
    */
-  private readonly POSTERIZE_LEVELS = 8;
+  private colorLevels = 8;
 
   /**
-   * Blur kernel size (5x5 = 25 neighbors)
-   * Simplified bilateral blur for oil painting effect
+   * Blur kernel size (3-9)
+   * Default: 5 - Simplified bilateral blur for oil painting effect
    * 5x5 provides stronger artistic blur (trade-off: ~15-20 FPS at 1080p)
    */
-  private readonly KERNEL_SIZE = 5;
+  private brushSize = 5;
 
   /**
-   * Color similarity threshold for edge-preserving blur
-   * RGB delta < 80 = similar color → include in blur
-   * RGB delta >= 80 = edge detected → preserve sharpness
+   * Color similarity threshold (30-150) for edge-preserving blur
+   * Default: 80 - RGB delta < threshold = similar color → include in blur
+   * RGB delta >= threshold = edge detected → preserve sharpness
    * Higher threshold = more aggressive blur, stronger oil painting effect
    */
-  private readonly COLOR_SIMILARITY_THRESHOLD = 80;
+  private edgePreservation = 80;
 
   /**
    * Temporary buffer for blur pass
@@ -63,7 +63,7 @@ export class OilPaintingFilter implements Filter {
   }
 
   private posterize(data: Uint8ClampedArray): void {
-    const step = 256 / this.POSTERIZE_LEVELS;
+    const step = 256 / this.colorLevels;
 
     for (let i = 0; i < data.length; i += 4) {
       // Quantize each channel to nearest posterization level (clamp to avoid 256)
@@ -80,7 +80,7 @@ export class OilPaintingFilter implements Filter {
     width: number,
     height: number
   ): void {
-    const halfKernel = Math.floor(this.KERNEL_SIZE / 2);
+    const halfKernel = Math.floor(this.brushSize / 2);
 
     // Process each pixel
     for (let y = 0; y < height; y++) {
@@ -113,7 +113,7 @@ export class OilPaintingFilter implements Filter {
                 Math.abs(nR - cR) + Math.abs(nG - cG) + Math.abs(nB - cB);
 
               // Threshold check: include neighbor if similar color
-              if (colorDelta < this.COLOR_SIMILARITY_THRESHOLD) {
+              if (colorDelta < this.edgePreservation) {
                 sumR += nR;
                 sumG += nG;
                 sumB += nB;
@@ -138,6 +138,41 @@ export class OilPaintingFilter implements Filter {
         }
       }
     }
+  }
+
+  /**
+   * Update filter parameters at runtime
+   */
+  setParameters(params: Record<string, number>): void {
+    if (params["colorLevels"] !== undefined) {
+      this.colorLevels = Math.max(
+        4,
+        Math.min(16, Math.round(params["colorLevels"]))
+      );
+    }
+    if (params["brushSize"] !== undefined) {
+      this.brushSize = Math.max(
+        3,
+        Math.min(9, Math.round(params["brushSize"]))
+      );
+    }
+    if (params["edgePreservation"] !== undefined) {
+      this.edgePreservation = Math.max(
+        30,
+        Math.min(150, params["edgePreservation"])
+      );
+    }
+  }
+
+  /**
+   * Get default parameter values
+   */
+  getDefaultParameters(): Record<string, number> {
+    return {
+      colorLevels: 8,
+      brushSize: 5,
+      edgePreservation: 80,
+    };
   }
 
   /**

@@ -8,23 +8,28 @@ import { Logger } from "../utils/Logger";
 
 export class DepthOfFieldFilter implements Filter {
   /**
-   * Focus zone radius as ratio of minimum dimension (width or height)
-   * 0.3 = 30% of min dimension, creating visible focus area (>20%) with room for blur (<40%)
+   * Focus zone radius as ratio of minimum dimension (0.1-0.6)
+   * Default: 0.3 = 30% of min dimension, creating visible focus area
    * Example: 1920×1080 → min=1080, radius=324px (circle diameter ~650px centered)
    */
-  private readonly FOCUS_RADIUS_RATIO = 0.3;
+  private focusRadius = 0.3;
 
   /**
-   * Maximum blur kernel size at image edges
-   * 9 = strong bokeh effect without severe performance degradation (<20 FPS)
+   * Maximum blur kernel size at image edges (3-15)
+   * Default: 9 = strong bokeh effect without severe performance degradation
    * Higher values create stronger blur but reduce FPS exponentially
    */
-  private readonly MAX_BLUR_KERNEL = 9;
+  private blurStrength = 9;
 
   /**
    * Temporary buffer for blur passes (reused across frames)
    */
   private blurBuffer: Uint8ClampedArray | null = null;
+
+  /**
+   * Temporary buffer for separable blur horizontal pass (reused across frames)
+   */
+  private separableBlurBuffer: Uint8ClampedArray | null = null;
 
   /**
    * Pre-computed distance map (pixels to focus zone center)
@@ -66,7 +71,7 @@ export class DepthOfFieldFilter implements Filter {
       const centerY = height / 2;
 
       // Focus zone radius (30% of minimum dimension)
-      const focusRadius = Math.min(width, height) * this.FOCUS_RADIUS_RATIO;
+      const focusRadius = Math.min(width, height) * this.focusRadius;
 
       // Maximum distance (corner to center)
       const maxDistance = Math.sqrt(centerX * centerX + centerY * centerY);
@@ -98,7 +103,7 @@ export class DepthOfFieldFilter implements Filter {
       this.blurBuffer.set(data);
 
       // Step 2: Apply maximum blur to entire image (separable box blur)
-      this.applySeparableBlur(data, width, height, this.MAX_BLUR_KERNEL);
+      this.applySeparableBlur(data, width, height, this.blurStrength);
 
       // Step 3: Blend blurred version with original based on distance from focus zone
       for (let y = 0; y < height; y++) {
@@ -164,8 +169,12 @@ export class DepthOfFieldFilter implements Filter {
 
     const radius = Math.floor(kernelSize / 2);
 
-    // Temporary buffer for intermediate horizontal pass result
-    const tempBuffer = new Uint8ClampedArray(data.length);
+    // Temporary buffer for intermediate horizontal pass result (reuse across frames)
+    const expectedLength = data.length;
+    if (this.separableBlurBuffer?.length !== expectedLength) {
+      this.separableBlurBuffer = new Uint8ClampedArray(expectedLength);
+    }
+    const tempBuffer = this.separableBlurBuffer;
 
     // Horizontal pass (read from data, write to tempBuffer)
     for (let y = 0; y < height; y++) {
@@ -221,11 +230,38 @@ export class DepthOfFieldFilter implements Filter {
   }
 
   /**
+   * Set filter parameters
+   * @param params - Partial parameters to update
+   */
+  setParameters(params: Record<string, number>): void {
+    if (params["focusRadius"] !== undefined) {
+      // C3 FIX - No distanceMap invalidation needed: distanceMap depends only
+      // on pixel positions (dimensions), not on focusRadius.
+      this.focusRadius = Math.max(0.1, Math.min(0.6, params["focusRadius"]));
+    }
+    if (params["blurStrength"] !== undefined) {
+      this.blurStrength = Math.max(
+        3,
+        Math.min(15, Math.floor(params["blurStrength"]))
+      );
+    }
+  }
+
+  /**
+   * Get default parameter values
+   * @returns Default parameters object
+   */
+  getDefaultParameters(): Record<string, number> {
+    return { focusRadius: 0.3, blurStrength: 9 };
+  }
+
+  /**
    * Cleanup allocated buffers when filter is replaced
    */
   cleanup(): void {
     try {
       this.blurBuffer = null;
+      this.separableBlurBuffer = null;
       this.distanceMap = null;
       this.lastWidth = 0;
       this.lastHeight = 0;

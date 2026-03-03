@@ -1,5 +1,6 @@
 _bmad
 .github/agents/
+.github/prompts/
 
 # BMAD outputs
 #_bmad-output/

@@ -9,11 +9,11 @@ import { Logger } from "../utils/Logger";
 
 export class ComicBookFilter implements Filter {
   /**
-   * Edge magnitude threshold for black outline rendering
+   * Edge magnitude threshold for black outline rendering (30-200)
+   * Default: 100 filters out noise (50-80) while capturing medium-strength edges (<150)
    * Gradients above this threshold become black outlines
-   * 100 filters out noise (50-80) while capturing medium-strength edges (<150)
    */
-  private readonly EDGE_THRESHOLD = 100;
+  private edgeSensitivity = 100;
 
   /**
    * Buffer for Sobel gradient computation (reused across frames)
@@ -80,7 +80,7 @@ export class ComicBookFilter implements Filter {
             );
 
             // If edge detected, draw black outline
-            if (magnitude > this.EDGE_THRESHOLD) {
+            if (magnitude > this.edgeSensitivity) {
               const pixelIdx = idx * 4;
               data[pixelIdx] = 0; // R = black
               data[pixelIdx + 1] = 0; // G = black
@@ -105,6 +105,27 @@ export class ComicBookFilter implements Filter {
       );
       throw error;
     }
+  }
+
+  /**
+   * Set filter parameters
+   * @param params - Partial parameters to update
+   */
+  setParameters(params: Record<string, number>): void {
+    if (params["edgeSensitivity"] !== undefined) {
+      this.edgeSensitivity = Math.max(
+        30,
+        Math.min(200, params["edgeSensitivity"])
+      );
+    }
+  }
+
+  /**
+   * Get default parameter values
+   * @returns Default parameters object
+   */
+  getDefaultParameters(): Record<string, number> {
+    return { edgeSensitivity: 100 };
   }
 
   /**

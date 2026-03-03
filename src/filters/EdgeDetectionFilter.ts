@@ -8,11 +8,11 @@ import { computeSobelGradients } from "../utils/SobelOperator";
 
 export class EdgeDetectionFilter implements Filter {
   /**
-   * Edge detection magnitude threshold (0-255)
-   * 50 provides clean edge detection with minimal noise
+   * Edge detection magnitude threshold (10-150)
+   * Default: 50 provides clean edge detection with minimal noise
    * Lower values = more edges detected (noisier), higher values = only strongest edges
    */
-  private readonly EDGE_THRESHOLD = 50;
+  private edgeSensitivity = 50;
 
   /**
    * Feature flag for Sobel utility migration
@@ -53,7 +53,7 @@ export class EdgeDetectionFilter implements Filter {
           const safeMagnitude = isFinite(magnitude) ? magnitude : 0;
 
           // Set pixel to white if edge detected, black otherwise
-          const edgeValue = safeMagnitude > this.EDGE_THRESHOLD ? 255 : 0;
+          const edgeValue = safeMagnitude > this.edgeSensitivity ? 255 : 0;
 
           data[byteIdx] = edgeValue; // R
           data[byteIdx + 1] = edgeValue; // G
@@ -82,7 +82,7 @@ export class EdgeDetectionFilter implements Filter {
           const magnitude = Math.sqrt(gx * gx + gy * gy);
 
           // Set pixel to white if edge detected, black otherwise
-          const edgeValue = magnitude > this.EDGE_THRESHOLD ? 255 : 0;
+          const edgeValue = magnitude > this.edgeSensitivity ? 255 : 0;
 
           data[idx] = edgeValue; // R
           data[idx + 1] = edgeValue; // G
@@ -147,6 +147,27 @@ export class EdgeDetectionFilter implements Filter {
       2 * this.getGrayscale(data, idx(y + 1, x)) +
       this.getGrayscale(data, idx(y + 1, x + 1))
     );
+  }
+
+  /**
+   * Set filter parameters
+   * @param params - Partial parameters to update
+   */
+  setParameters(params: Record<string, number>): void {
+    if (params["edgeSensitivity"] !== undefined) {
+      this.edgeSensitivity = Math.max(
+        10,
+        Math.min(150, params["edgeSensitivity"])
+      );
+    }
+  }
+
+  /**
+   * Get default parameter values
+   * @returns Default parameters object
+   */
+  getDefaultParameters(): Record<string, number> {
+    return { edgeSensitivity: 50 };
   }
 
   /**

@@ -8,25 +8,25 @@ import { computeSobelGradients } from "../utils/SobelOperator";
 
 export class RotoscopeFilter implements Filter {
   /**
-   * Number of color levels per RGB channel for posterization
-   * Value of 6 creates cartoon-like color banding (6x6x6 = 216 colors)
+   * Number of color levels per RGB channel for posterization (3-12)
+   * Default: 6 creates cartoon-like color banding (6x6x6 = 216 colors)
    * Lower values = more aggressive cartoon effect
    */
-  private readonly COLOR_LEVELS = 6;
+  private colorLevels = 6;
 
   /**
-   * Edge detection sensitivity threshold (0-255)
-   * 30 provides good edge detection without too much noise
+   * Edge detection sensitivity threshold (10-100)
+   * Default: 30 provides good edge detection without too much noise
    * Lower values = more sensitive, higher values = only strong edges
    */
-  private readonly EDGE_THRESHOLD = 30;
+  private edgeSensitivity = 30;
 
   /**
-   * Intensity of edge darkening effect (0-1)
-   * 0.8 creates strong black outlines for cartoon effect
+   * Intensity of edge darkening effect (0.0-1.0)
+   * Default: 0.8 creates strong black outlines for cartoon effect
    * Lower values = lighter edges, higher values = darker edges
    */
-  private readonly EDGE_STRENGTH = 0.8;
+  private edgeDarkness = 0.8;
 
   /**
    * Feature flag for Sobel utility migration
@@ -66,7 +66,7 @@ export class RotoscopeFilter implements Filter {
   }
 
   private posterize(data: Uint8ClampedArray): void {
-    const step = 256 / this.COLOR_LEVELS;
+    const step = 256 / this.colorLevels;
 
     for (let i = 0; i < data.length; i += 4) {
       // Quantize each color channel to reduce palette
@@ -98,8 +98,8 @@ export class RotoscopeFilter implements Filter {
           const safeMagnitude = isFinite(magnitude) ? magnitude : 0;
 
           // If edge detected, darken the pixel
-          if (safeMagnitude > this.EDGE_THRESHOLD) {
-            const darken = 1 - this.EDGE_STRENGTH * (safeMagnitude / 255);
+          if (safeMagnitude > this.edgeSensitivity) {
+            const darken = 1 - this.edgeDarkness * (safeMagnitude / 255);
             data[byteIdx] = data[byteIdx]! * darken;
             data[byteIdx + 1] = data[byteIdx + 1]! * darken;
             data[byteIdx + 2] = data[byteIdx + 2]! * darken;
@@ -121,8 +121,8 @@ export class RotoscopeFilter implements Filter {
           const magnitude = Math.sqrt(gx * gx + gy * gy);
 
           // If edge detected, darken the pixel
-          if (magnitude > this.EDGE_THRESHOLD) {
-            const darken = 1 - this.EDGE_STRENGTH * (magnitude / 255);
+          if (magnitude > this.edgeSensitivity) {
+            const darken = 1 - this.edgeDarkness * (magnitude / 255);
             data[idx] = data[idx]! * darken;
             data[idx + 1] = data[idx + 1]! * darken;
             data[idx + 2] = data[idx + 2]! * darken;
@@ -200,6 +200,38 @@ export class RotoscopeFilter implements Filter {
       2 * bottomCenter +
       bottomRight
     );
+  }
+
+  /**
+   * Update filter parameters at runtime
+   */
+  setParameters(params: Record<string, number>): void {
+    if (params["colorLevels"] !== undefined) {
+      this.colorLevels = Math.max(
+        3,
+        Math.min(12, Math.round(params["colorLevels"]))
+      );
+    }
+    if (params["edgeSensitivity"] !== undefined) {
+      this.edgeSensitivity = Math.max(
+        10,
+        Math.min(100, params["edgeSensitivity"])
+      );
+    }
+    if (params["edgeDarkness"] !== undefined) {
+      this.edgeDarkness = Math.max(0, Math.min(1, params["edgeDarkness"]));
+    }
+  }
+
+  /**
+   * Get default parameter values
+   */
+  getDefaultParameters(): Record<string, number> {
+    return {
+      colorLevels: 6,
+      edgeSensitivity: 30,
+      edgeDarkness: 0.8,
+    };
   }
 
   /**

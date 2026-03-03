@@ -4,6 +4,7 @@
  */
 
 import { Filter, validateImageData } from "./Filter";
+import { Logger } from "../utils/Logger";
 
 /**
  * Glitch artifact types
@@ -21,38 +22,40 @@ interface ActiveGlitch {
 
 export class GlitchFilter implements Filter {
   /**
-   * Probability of horizontal line shift per scanline (10%)
-   * Creates scanline displacement artifacts
+   * Probability of horizontal line shift per scanline (0.0-0.3)
+   * Default: 0.05 - Creates scanline displacement artifacts
    */
-  private readonly LINE_SHIFT_PROBABILITY = 0.1;
+  private lineShiftFrequency = 0.05;
 
   /**
-   * Probability of RGB channel separation per frame (15%)
-   * Creates chromatic aberration-like color splitting
+   * Probability of RGB channel separation per frame (0.0-0.5)
+   * Default: 0.15 - Creates chromatic aberration-like color splitting
    */
-  private readonly RGB_SEPARATION_PROBABILITY = 0.15;
+  private rgbGlitchFrequency = 0.15;
 
   /**
-   * Maximum RGB channel offset in pixels (±10px)
-   * Bounded to prevent excessive memory usage
+   * Maximum RGB channel offset in pixels (3-20)
+   * Default: 8 - Bounded to prevent excessive memory usage
    */
-  private readonly RGB_OFFSET_MAX = 10;
+  private rgbGlitchIntensity = 8;
 
   /**
-   * Probability of block corruption per 8x8 block (5%)
-   * Creates digital noise artifacts
+   * Probability of block corruption per 8x8 block (0.0-0.2)
+   * Default: 0.05 - Creates digital noise artifacts
    */
-  private readonly BLOCK_CORRUPTION_PROBABILITY = 0.05;
+  private blockCorruptionFrequency = 0.05;
 
   /**
-   * Minimum glitch persistence in frames
+   * Minimum glitch persistence in frames (1-5)
+   * Default: 2
    */
-  private readonly GLITCH_TTL_MIN = 2;
+  private glitchMinDuration = 2;
 
   /**
-   * Maximum glitch persistence in frames
+   * Maximum glitch persistence in frames (2-10)
+   * Default: 5
    */
-  private readonly GLITCH_TTL_MAX = 3;
+  private glitchMaxDuration = 5;
 
   /**
    * Maximum active glitches cap (FIFO eviction)
@@ -68,6 +71,22 @@ export class GlitchFilter implements Filter {
   private activeGlitches: ActiveGlitch[] = [];
 
   /**
+   * H3 FIX - Reusable buffer for RGB separation (avoids per-call allocation)
+   */
+  private rgbSeparationBuffer: Uint8ClampedArray | null = null;
+
+  /**
+   * V6 - Temporal variation state
+   * Randomizes frequency parameters every 60-120 frames
+   */
+  private baseLineShiftFrequency = 0.05;
+  private baseRgbGlitchFrequency = 0.15;
+  private baseBlockCorruptionFrequency = 0.05;
+  private variationFrameCounter = 0;
+  private variationInterval = 90; // frames (60-120)
+  private currentVariationMultiplier = 1.0;
+
+  /**
    * Apply glitch/datamosh effect to image data
    * Combines random line shifts, RGB separation, block corruption
    * @param imageData - The input image data to transform
@@ -79,6 +98,20 @@ export class GlitchFilter implements Filter {
     const data = imageData.data;
     const width = imageData.width;
     const height = imageData.height;
+
+    // V6 - Temporal variation: update frequencies periodically
+    this.variationFrameCounter++;
+    if (this.variationFrameCounter >= this.variationInterval) {
+      // Randomize new interval (60-120 frames = 1-2 seconds @ 60 FPS)
+      this.variationInterval = 60 + Math.floor(Math.random() * 61);
+
+      // Randomize variation multiplier (±30% of base values)
+      // Range: [0.7, 1.3]
+      this.currentVariationMultiplier = 0.7 + Math.random() * 0.6;
+
+      // Reset counter
+      this.variationFrameCounter = 0;
+    }
 
     // Apply active glitches first (before TTL decrement)
     for (const glitch of this.activeGlitches) {
@@ -142,8 +175,16 @@ export class GlitchFilter implements Filter {
     width: number,
     height: number
   ): void {
+    // V6 - Apply temporal variation to frequencies (use base values × variation multiplier)
+    const variedLineShift =
+      this.baseLineShiftFrequency * this.currentVariationMultiplier;
+    const variedRgbGlitch =
+      this.baseRgbGlitchFrequency * this.currentVariationMultiplier;
+    const variedBlockCorruption =
+      this.baseBlockCorruptionFrequency * this.currentVariationMultiplier;
+
     // Line shift glitch
-    if (Math.random() < this.LINE_SHIFT_PROBABILITY) {
+    if (Math.random() < variedLineShift) {
       const randomRow = Math.floor(Math.random() * height);
       const rowStart = randomRow * width * 4;
       const rowData = new Uint8ClampedArray(width * 4);
@@ -168,9 +209,9 @@ export class GlitchFilter implements Filter {
     }
 
     // RGB separation glitch
-    if (Math.random() < this.RGB_SEPARATION_PROBABILITY) {
+    if (Math.random() < variedRgbGlitch) {
       const offset = Math.floor(
-        (Math.random() - 0.5) * 2 * this.RGB_OFFSET_MAX
+        (Math.random() - 0.5) * 2 * this.rgbGlitchIntensity
       );
       this.addGlitch({
         type: "rgb",
@@ -180,7 +221,7 @@ export class GlitchFilter implements Filter {
     }
 
     // Block corruption glitch
-    if (Math.random() < this.BLOCK_CORRUPTION_PROBABILITY) {
+    if (Math.random() < variedBlockCorruption) {
       const blockData = new Uint8ClampedArray(8 * 8 * 4);
       for (let i = 0; i < blockData.length; i++) {
         blockData[i] = Math.floor(Math.random() * 256);
@@ -200,7 +241,12 @@ export class GlitchFilter implements Filter {
     height: number,
     offset: number
   ): void {
-    const tempData = new Uint8ClampedArray(data);
+    // H3 FIX - Reuse buffer instead of allocating per call
+    if (this.rgbSeparationBuffer?.length !== data.length) {
+      this.rgbSeparationBuffer = new Uint8ClampedArray(data.length);
+    }
+    this.rgbSeparationBuffer.set(data);
+    const tempData = this.rgbSeparationBuffer;
 
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
@@ -251,11 +297,93 @@ export class GlitchFilter implements Filter {
 
   private randomTTL(): number {
     return (
-      this.GLITCH_TTL_MIN +
+      this.glitchMinDuration +
       Math.floor(
-        Math.random() * (this.GLITCH_TTL_MAX - this.GLITCH_TTL_MIN + 1)
+        Math.random() * (this.glitchMaxDuration - this.glitchMinDuration + 1)
       )
     );
+  }
+
+  /**
+   * Set filter parameters
+   * @param params - Partial parameters to update
+   */
+  setParameters(params: Record<string, number>): void {
+    if (params["lineShiftFrequency"] !== undefined) {
+      this.lineShiftFrequency = Math.max(
+        0,
+        Math.min(0.3, params["lineShiftFrequency"])
+      );
+      this.baseLineShiftFrequency = this.lineShiftFrequency; // Update base for variation
+    }
+    if (params["rgbGlitchFrequency"] !== undefined) {
+      this.rgbGlitchFrequency = Math.max(
+        0,
+        Math.min(0.5, params["rgbGlitchFrequency"])
+      );
+      this.baseRgbGlitchFrequency = this.rgbGlitchFrequency; // Update base for variation
+    }
+    if (params["rgbGlitchIntensity"] !== undefined) {
+      this.rgbGlitchIntensity = Math.max(
+        3,
+        Math.min(20, Math.floor(params["rgbGlitchIntensity"]))
+      );
+    }
+    if (params["blockCorruptionFrequency"] !== undefined) {
+      this.blockCorruptionFrequency = Math.max(
+        0,
+        Math.min(0.2, params["blockCorruptionFrequency"])
+      );
+      this.baseBlockCorruptionFrequency = this.blockCorruptionFrequency; // Update base for variation
+    }
+    if (params["glitchMinDuration"] !== undefined) {
+      this.glitchMinDuration = Math.max(
+        1,
+        Math.min(5, Math.floor(params["glitchMinDuration"]))
+      );
+    }
+    if (params["glitchMaxDuration"] !== undefined) {
+      this.glitchMaxDuration = Math.max(
+        2,
+        Math.min(10, Math.floor(params["glitchMaxDuration"]))
+      );
+    }
+
+    // F14 FIX - Validate min/max relationship
+    if (this.glitchMinDuration > this.glitchMaxDuration) {
+      const temp = this.glitchMinDuration;
+      this.glitchMinDuration = this.glitchMaxDuration;
+      this.glitchMaxDuration = temp;
+      Logger.warn(
+        "Auto-corrected glitchMinDuration > glitchMaxDuration",
+        "GlitchFilter"
+      );
+    }
+
+    // Ensure minimum variation range (per spec F14)
+    const MIN_VARIATION_RANGE = 1;
+    if (this.glitchMaxDuration - this.glitchMinDuration < MIN_VARIATION_RANGE) {
+      this.glitchMaxDuration = Math.min(
+        10,
+        this.glitchMinDuration + MIN_VARIATION_RANGE
+      );
+      Logger.warn("Enforcing minimum variation range", "GlitchFilter");
+    }
+  }
+
+  /**
+   * Get default parameter values
+   * @returns Default parameters object
+   */
+  getDefaultParameters(): Record<string, number> {
+    return {
+      lineShiftFrequency: 0.05,
+      rgbGlitchFrequency: 0.15,
+      rgbGlitchIntensity: 8,
+      blockCorruptionFrequency: 0.05,
+      glitchMinDuration: 2,
+      glitchMaxDuration: 5,
+    };
   }
 
   /**
@@ -264,5 +392,6 @@ export class GlitchFilter implements Filter {
    */
   cleanup(): void {
     this.activeGlitches = [];
+    this.rgbSeparationBuffer = null;
   }
 }

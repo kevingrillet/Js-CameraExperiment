@@ -96,7 +96,95 @@ describe("KaleidoscopeFilter", () => {
     }
   });
 
-  it("should cleanup buffers correctly", () => {
+  it("should handle different segment counts", () => {
+    const filter = new KaleidoscopeFilter();
+
+    const imageData = {
+      width: 20,
+      height: 20,
+      data: new Uint8ClampedArray(20 * 20 * 4),
+    } as ImageData;
+
+    // Fill with gradient
+    for (let y = 0; y < 20; y++) {
+      for (let x = 0; x < 20; x++) {
+        const i = (y * 20 + x) * 4;
+        imageData.data[i] = x * 12;
+        imageData.data[i + 1] = y * 12;
+        imageData.data[i + 2] = 128;
+        imageData.data[i + 3] = 255;
+      }
+    }
+
+    // Test different segment counts
+    filter.setParameters({ segments: 4 });
+    const result4 = filter.apply(imageData);
+    expect(result4).toBeDefined();
+
+    filter.setParameters({ segments: 8 });
+    const result8 = filter.apply(imageData);
+    expect(result8).toBeDefined();
+
+    filter.setParameters({ segments: 12 });
+    const result12 = filter.apply(imageData);
+    expect(result12).toBeDefined();
+  });
+
+  it("should handle auto-rotate animation", () => {
+    const filter = new KaleidoscopeFilter();
+
+    const imageData = {
+      width: 10,
+      height: 10,
+      data: new Uint8ClampedArray(10 * 10 * 4),
+    } as ImageData;
+
+    // Enable auto-rotate with speed 2.0
+    filter.setParameters({
+      autoRotate: 2.0,
+    });
+
+    const result1 = filter.apply(imageData);
+    const result2 = filter.apply(imageData);
+
+    // Both should be defined
+    expect(result1).toBeDefined();
+    expect(result2).toBeDefined();
+  });
+
+  it("should get auto-rotate state", () => {
+    const filter = new KaleidoscopeFilter();
+
+    filter.setParameters({
+      autoRotate: 1.5,
+    });
+
+    const state = filter.getAutoRotateState();
+    expect(state).toBeDefined();
+    expect(state?.enabled).toBe(true);
+    expect(state?.speed).toBe(1.5);
+  });
+
+  it("should handle manual rotation", () => {
+    const filter = new KaleidoscopeFilter();
+
+    const imageData = {
+      width: 10,
+      height: 10,
+      data: new Uint8ClampedArray(10 * 10 * 4),
+    } as ImageData;
+
+    // Disable auto-rotate and set manual rotation
+    filter.setParameters({
+      autoRotate: 0,
+      rotation: 45,
+    });
+
+    const result = filter.apply(imageData);
+    expect(result).toBeDefined();
+  });
+
+  it("should cleanup allocated buffers", () => {
     const filter = new KaleidoscopeFilter();
 
     const imageData = {

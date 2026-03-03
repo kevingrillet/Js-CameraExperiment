@@ -52,9 +52,17 @@ export default tseslint.config(
     },
   },
   {
+    // Test files - relax unbound-method rule for vitest spies/mocks
+    files: ["**/__tests__/**/*.ts", "**/*.test.ts"],
+    rules: {
+      "@typescript-eslint/unbound-method": "off",
+    },
+  },
+  {
     ignores: [
       "dist/**",
       "node_modules/**",
+      "coverage/**",
       "_bmad/**",
       "_bmad-output/**",
       "*.config.js",

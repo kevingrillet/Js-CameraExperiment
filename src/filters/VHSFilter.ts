@@ -10,25 +10,25 @@ export class VHSFilter implements Filter {
   private rowDataBuffer: Uint8ClampedArray | null = null;
 
   /**
-   * Probability of random glitch per frame (0-1)
-   * 0.02 = 2% chance per frame = glitch every ~2 seconds at 30fps
+   * Probability of random glitch per frame (0.0-0.1)
+   * Default: 0.02 = 2% chance per frame = glitch every ~2 seconds at 30fps
    * Simulates tracking errors and tape damage on VHS
    */
-  private readonly GLITCH_PROBABILITY = 0.02;
+  private glitchFrequency = 0.02;
 
   /**
-   * Probability of horizontal tracking line per frame (0-1)
-   * 0.15 = 15% chance = frequent but not constant
+   * Probability of horizontal tracking line per frame (0.0-0.5)
+   * Default: 0.15 = 15% chance = frequent but not constant
    * Mimics VHS head tracking issues and tape wear
    */
-  private readonly TRACKING_LINE_PROBABILITY = 0.15;
+  private trackingLinesFrequency = 0.15;
 
   /**
-   * Intensity of film grain noise (0-1)
-   * 0.08 provides subtle grain without overwhelming the image
+   * Intensity of film grain noise (0.0-0.3)
+   * Default: 0.08 provides subtle grain without overwhelming the image
    * Represents magnetic particle noise on VHS tape
    */
-  private readonly GRAIN_INTENSITY = 0.08;
+  private grainIntensity = 0.08;
 
   /**
    * Apply VHS vintage effect to image data
@@ -45,7 +45,7 @@ export class VHSFilter implements Filter {
     this.frameCount++;
 
     // Add random tracking lines (horizontal glitches)
-    if (Math.random() < this.TRACKING_LINE_PROBABILITY) {
+    if (Math.random() < this.trackingLinesFrequency) {
       this.addTrackingLine(data, width, height);
     }
 
@@ -55,7 +55,7 @@ export class VHSFilter implements Filter {
         const idx = (y * width + x) * 4;
 
         // Add grain/noise
-        const grain = (Math.random() - 0.5) * this.GRAIN_INTENSITY * 255;
+        const grain = (Math.random() - 0.5) * this.grainIntensity * 255;
 
         // Slightly desaturate and shift colors for VHS look
         const r = data[idx]!;
@@ -100,7 +100,7 @@ export class VHSFilter implements Filter {
     }
 
     // Occasional random glitches
-    if (Math.random() < this.GLITCH_PROBABILITY) {
+    if (Math.random() < this.glitchFrequency) {
       this.addGlitch(data, width, height);
     }
 
@@ -163,6 +163,41 @@ export class VHSFilter implements Filter {
         data[dstIdx + 2] = rowData[srcX * 4 + 2]!;
       }
     }
+  }
+
+  /**
+   * Update filter parameters at runtime
+   */
+  setParameters(params: Record<string, number>): void {
+    if (params["glitchFrequency"] !== undefined) {
+      this.glitchFrequency = Math.max(
+        0,
+        Math.min(0.1, params["glitchFrequency"])
+      );
+    }
+    if (params["trackingLinesFrequency"] !== undefined) {
+      this.trackingLinesFrequency = Math.max(
+        0,
+        Math.min(0.5, params["trackingLinesFrequency"])
+      );
+    }
+    if (params["grainIntensity"] !== undefined) {
+      this.grainIntensity = Math.max(
+        0,
+        Math.min(0.3, params["grainIntensity"])
+      );
+    }
+  }
+
+  /**
+   * Get default parameter values
+   */
+  getDefaultParameters(): Record<string, number> {
+    return {
+      glitchFrequency: 0.02,
+      trackingLinesFrequency: 0.15,
+      grainIntensity: 0.08,
+    };
   }
 
   /**

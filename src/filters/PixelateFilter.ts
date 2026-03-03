@@ -7,11 +7,11 @@
 import { Filter, validateImageData } from "./Filter";
 
 export class PixelateFilter implements Filter {
-  /** Game Boy horizontal resolution - target width for pixelation */
-  private readonly GB_WIDTH = 160;
+  /** Target width for pixelation (80-320, default 160) */
+  private horizontalResolution = 160;
 
-  /** Game Boy vertical resolution - target height for pixelation */
-  private readonly GB_HEIGHT = 144;
+  /** Target height for pixelation (72-288, default 144) */
+  private verticalResolution = 144;
 
   private originalDataBuffer: Uint8ClampedArray | null = null;
 
@@ -30,9 +30,9 @@ export class PixelateFilter implements Filter {
     const width = imageData.width;
     const height = imageData.height;
 
-    // Calculate block size to achieve Game Boy resolution
-    const blockWidth = width / this.GB_WIDTH;
-    const blockHeight = height / this.GB_HEIGHT;
+    // Calculate block size to achieve target resolution
+    const blockWidth = width / this.horizontalResolution;
+    const blockHeight = height / this.verticalResolution;
 
     // F5: Reuse buffer instead of allocating new one every frame
     if (this.originalDataBuffer?.length !== data.length) {
@@ -40,9 +40,9 @@ export class PixelateFilter implements Filter {
     }
     this.originalDataBuffer.set(data);
 
-    // Process each Game Boy pixel
-    for (let gbY = 0; gbY < this.GB_HEIGHT; gbY++) {
-      for (let gbX = 0; gbX < this.GB_WIDTH; gbX++) {
+    // Process each target pixel
+    for (let gbY = 0; gbY < this.verticalResolution; gbY++) {
+      for (let gbX = 0; gbX < this.horizontalResolution; gbX++) {
         // Calculate the block boundaries in the original image
         const startX = Math.floor(gbX * blockWidth);
         const startY = Math.floor(gbY * blockHeight);
@@ -98,5 +98,39 @@ export class PixelateFilter implements Filter {
     }
 
     return imageData;
+  }
+
+  /**
+   * Set filter parameters
+   * @param params - Partial parameters to update
+   */
+  setParameters(params: Record<string, number>): void {
+    if (params["horizontalResolution"] !== undefined) {
+      this.horizontalResolution = Math.max(
+        80,
+        Math.min(320, Math.floor(params["horizontalResolution"]))
+      );
+    }
+    if (params["verticalResolution"] !== undefined) {
+      this.verticalResolution = Math.max(
+        72,
+        Math.min(288, Math.floor(params["verticalResolution"]))
+      );
+    }
+  }
+
+  /**
+   * Get default parameter values
+   * @returns Default parameters object
+   */
+  getDefaultParameters(): Record<string, number> {
+    return { horizontalResolution: 160, verticalResolution: 144 };
+  }
+
+  /**
+   * Cleanup allocated buffer when filter is replaced
+   */
+  cleanup(): void {
+    this.originalDataBuffer = null;
   }
 }

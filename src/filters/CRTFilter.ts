@@ -7,25 +7,25 @@ import { Filter, validateImageData } from "./Filter";
 
 export class CRTFilter implements Filter {
   /**
-   * Darkness of horizontal scanlines (0-1)
-   * Value of 0.3 provides visible scanlines without being too harsh
+   * Darkness of horizontal scanlines (0.0-1.0)
+   * Default: 0.3 provides visible scanlines without being too harsh
    * Mimics the shadow mask effect of CRT phosphor arrangement
    */
-  private readonly SCANLINE_INTENSITY = 0.3;
+  private scanlineDarkness = 0.3;
 
   /**
-   * Spacing between scanlines in pixels
-   * 3 pixels matches the typical phosphor triad spacing on vintage CRTs
+   * Spacing between scanlines in pixels (1-6)
+   * Default: 2 matches the typical phosphor triad spacing on vintage CRTs
    * Lower values = more scanlines (slower), higher values = less visible effect
    */
-  private readonly SCANLINE_SPACING = 3;
+  private scanlineSpacing = 2;
 
   /**
-   * Intensity of bloom/glow effect (0-1)
-   * 0.15 provides subtle glow without washing out the image
+   * Intensity of bloom/glow effect (0.0-0.5)
+   * Default: 0.15 provides subtle glow without washing out the image
    * Simulates the electron beam bloom on CRT phosphors
    */
-  private readonly BLOOM_AMOUNT = 0.15;
+  private bloomIntensity = 0.15;
 
   private bloomBuffer: Uint8ClampedArray | null = null;
 
@@ -53,9 +53,9 @@ export class CRTFilter implements Filter {
       const b = data[i + 2]!;
 
       // Brighten for bloom effect
-      const bloomR = Math.min(255, r * (1 + this.BLOOM_AMOUNT));
-      const bloomG = Math.min(255, g * (1 + this.BLOOM_AMOUNT));
-      const bloomB = Math.min(255, b * (1 + this.BLOOM_AMOUNT));
+      const bloomR = Math.min(255, r * (1 + this.bloomIntensity));
+      const bloomG = Math.min(255, g * (1 + this.bloomIntensity));
+      const bloomB = Math.min(255, b * (1 + this.bloomIntensity));
 
       this.bloomBuffer[i] = bloomR;
       this.bloomBuffer[i + 1] = bloomG;
@@ -64,7 +64,7 @@ export class CRTFilter implements Filter {
 
     // Second pass: Apply bloom and scanlines
     for (let y = 0; y < height; y++) {
-      const isScanline = y % this.SCANLINE_SPACING === 0;
+      const isScanline = y % this.scanlineSpacing === 0;
 
       for (let x = 0; x < width; x++) {
         const idx = (y * width + x) * 4;
@@ -79,17 +79,17 @@ export class CRTFilter implements Filter {
         const bloomB = this.bloomBuffer[idx + 2]!;
 
         let r =
-          originalR * (1 - this.BLOOM_AMOUNT) + bloomR * this.BLOOM_AMOUNT;
+          originalR * (1 - this.bloomIntensity) + bloomR * this.bloomIntensity;
         let g =
-          originalG * (1 - this.BLOOM_AMOUNT) + bloomG * this.BLOOM_AMOUNT;
+          originalG * (1 - this.bloomIntensity) + bloomG * this.bloomIntensity;
         let b =
-          originalB * (1 - this.BLOOM_AMOUNT) + bloomB * this.BLOOM_AMOUNT;
+          originalB * (1 - this.bloomIntensity) + bloomB * this.bloomIntensity;
 
         // Apply scanline darkening
         if (isScanline) {
-          r *= 1 - this.SCANLINE_INTENSITY;
-          g *= 1 - this.SCANLINE_INTENSITY;
-          b *= 1 - this.SCANLINE_INTENSITY;
+          r *= 1 - this.scanlineDarkness;
+          g *= 1 - this.scanlineDarkness;
+          b *= 1 - this.scanlineDarkness;
         }
 
         data[idx] = Math.min(255, r);
@@ -100,6 +100,41 @@ export class CRTFilter implements Filter {
     }
 
     return imageData;
+  }
+
+  /**
+   * Update filter parameters at runtime
+   */
+  setParameters(params: Record<string, number>): void {
+    if (params["scanlineDarkness"] !== undefined) {
+      this.scanlineDarkness = Math.max(
+        0,
+        Math.min(1, params["scanlineDarkness"])
+      );
+    }
+    if (params["scanlineSpacing"] !== undefined) {
+      this.scanlineSpacing = Math.max(
+        1,
+        Math.min(6, Math.round(params["scanlineSpacing"]))
+      );
+    }
+    if (params["bloomIntensity"] !== undefined) {
+      this.bloomIntensity = Math.max(
+        0,
+        Math.min(0.5, params["bloomIntensity"])
+      );
+    }
+  }
+
+  /**
+   * Get default parameter values
+   */
+  getDefaultParameters(): Record<string, number> {
+    return {
+      scanlineDarkness: 0.3,
+      scanlineSpacing: 2,
+      bloomIntensity: 0.15,
+    };
   }
 
   /**
