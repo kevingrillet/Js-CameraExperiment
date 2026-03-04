@@ -169,6 +169,10 @@ L'application sera accessible sur `http://localhost:5173` (ou le port indiqué d
 - `npm run test:run` : Exécute les tests une fois (pour CI/CD)
 - `npm run test:ui` : Interface visuelle pour les tests
 - `npm run test:coverage` : Génère un rapport de couverture de code
+- `npm run test:e2e` : Lance les tests E2E Playwright (Chromium)
+- `npm run test:e2e:headed` : Tests E2E avec navigateur visible
+- `npm run test:e2e:debug` : Debug interactif des tests E2E
+- `npm run test:e2e:report` : Ouvre le dernier rapport HTML Playwright
 - `npm run lint` : Vérifie le code avec ESLint
 - `npm run lint:fix` : Corrige automatiquement les erreurs ESLint
 - `npm run lint:md` : Vérifie les fichiers Markdown
@@ -217,6 +221,18 @@ src/
 │   └── translations.ts     # Traductions FR/EN
 └── types/
     └── index.ts            # Définitions TypeScript
+
+e2e/                         # Tests E2E Playwright
+├── fixtures/
+│   └── base-fixture.ts     # Fixture avec interception console + readiness
+├── helpers/
+│   ├── filter-helpers.ts   # Sélection filtres, GPU, FPS, presets
+│   └── memory-helpers.ts   # Métriques heap via CDP, forceGC
+├── filters-cpu.spec.ts     # 21 filtres CPU + stacks via presets
+├── filters-gpu.spec.ts     # 20 filtres GPU + stacks via presets
+├── webgl-errors.spec.ts    # Context loss + monitoring erreurs WebGL
+├── memory.spec.ts          # Détection fuites mémoire (CPU, GPU, soutenu)
+└── fps.spec.ts             # Seuils FPS par filtre + dégradation stack
 ```
 
 ### 🎮 Utilisation
@@ -275,7 +291,12 @@ src/
 
 #### Qualité & Tests
 
-- **Vitest 2.1.9** : Framework de tests unitaires avec Happy-DOM
+- **Vitest 4.0.18** : Framework de tests unitaires avec Happy-DOM (502 tests)
+- **Playwright 1.58.2** : Tests E2E sur Chromium avec caméra simulée (95 tests)
+  - Filtres CPU/GPU smoke tests, stacks via presets
+  - WebGL context loss et fallback Canvas2D automatique
+  - Détection de fuites mémoire via CDP (heap metrics)
+  - Validation FPS par filtre (seuil ≥ 15 FPS en SwiftShader)
 - **ESLint 9.18.0** : Linting avec typescript-eslint
 - **Prettier 3.2.0** : Formatage automatique du code
 - **MarkdownLint** : Validation des fichiers Markdown
@@ -432,6 +453,10 @@ The application will be accessible at `http://localhost:5173` (or the port indic
 - `npm run test`: Runs unit tests in watch mode (Vitest)
 - `npm run test:run`: Executes tests once (for CI/CD)
 - `npm run test:ui`: Visual interface for tests
+- `npm run test:e2e`: Runs Playwright E2E tests (Chromium)
+- `npm run test:e2e:headed`: E2E tests with visible browser
+- `npm run test:e2e:debug`: Interactive E2E test debugging
+- `npm run test:e2e:report`: Opens the latest Playwright HTML report
 - `npm run lint`: Checks code with ESLint
 - `npm run lint:fix`: Auto-fixes ESLint errors
 - `npm run lint:md`: Checks Markdown files
@@ -480,6 +505,18 @@ src/
 │   └── translations.ts     # FR/EN translations
 └── types/
     └── index.ts            # TypeScript definitions
+
+e2e/                         # Playwright E2E tests
+├── fixtures/
+│   └── base-fixture.ts     # Fixture with console interception + app readiness
+├── helpers/
+│   ├── filter-helpers.ts   # Filter selection, GPU, FPS, preset helpers
+│   └── memory-helpers.ts   # Heap metrics via CDP, forceGC
+├── filters-cpu.spec.ts     # 21 CPU filters + preset stacks
+├── filters-gpu.spec.ts     # 20 GPU filters + preset stacks
+├── webgl-errors.spec.ts    # Context loss + WebGL error monitoring
+├── memory.spec.ts          # Memory leak detection (CPU, GPU, sustained)
+└── fps.spec.ts             # FPS thresholds per filter + stack degradation
 ```
 
 ### 🎮 Usage
@@ -538,7 +575,12 @@ src/
 
 #### Quality & Testing
 
-- **Vitest 2.1.9**: Unit testing framework with Happy-DOM
+- **Vitest 4.0.18**: Unit testing framework with Happy-DOM (502 tests)
+- **Playwright 1.58.2**: E2E tests on Chromium with simulated camera (95 tests)
+  - CPU/GPU filter smoke tests, stacking via presets
+  - WebGL context loss and automatic Canvas2D fallback
+  - Memory leak detection via CDP (heap metrics)
+  - FPS validation per filter (threshold ≥ 15 FPS on SwiftShader)
 - **ESLint 9.18.0**: Linting with typescript-eslint
 - **Prettier 3.2.0**: Automatic code formatting
 - **MarkdownLint**: Markdown file validation

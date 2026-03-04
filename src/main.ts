@@ -208,6 +208,21 @@ class App {
       this.cleanup();
     });
 
+    // Expose dev-only test hook for E2E tests (stripped in production builds)
+    const isDev =
+      typeof import.meta !== "undefined" &&
+      typeof (import.meta as { env?: { DEV?: boolean } }).env?.DEV ===
+        "boolean" &&
+      (import.meta as unknown as { env: { DEV: boolean } }).env.DEV;
+    if (isDev) {
+      (window as unknown as Record<string, unknown>)["__TEST_APP__"] = {
+        getFPS: (): number => this.fpsCounter.getFPS(),
+        getFilterStack: (): string[] => [...this.currentFilterStack],
+        isWebGLEnabled: (): boolean => this.webglEnabled,
+        triggerWebGLContextLoss: (): void => this.handleWebGLContextLost(),
+      };
+    }
+
     // Start the application
     void this.start();
   }

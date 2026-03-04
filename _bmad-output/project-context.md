@@ -20,6 +20,7 @@ _This file contains critical rules and patterns that AI agents must follow when 
 - **TypeScript 5.9.3** — target ES2022, module ESNext, bundler resolution
 - **Vite 7.3.1** — dev server on port 3000, base path `/Js-CameraExperiment/`
 - **Vitest 4.0.18** — happy-dom environment, globals enabled, v8 coverage
+- **Playwright 1.58.2** — Chromium-only E2E tests with fake camera feed, SwiftShader WebGL
 - **ESLint 10.0.2** — flat config with `typescript-eslint` type-checked rules
 - **Prettier 3.8.1** — double quotes, 2-space indent, trailing comma es5, LF endings
 - **Husky 9.1.7 + lint-staged 16.3.0** — pre-commit: lint-staged + full test run
@@ -66,6 +67,24 @@ _This file contains critical rules and patterns that AI agents must follow when 
 - **ESLint relaxation in tests** — `unbound-method: off` for `**/__tests__/**/*.ts` and `**/*.test.ts` files
 - **Coverage exclusions** — DOM-intensive UI files, WebGL filters, `main.ts`, static data files, and type-only files excluded from coverage in `vitest.config.ts`
 
+### E2E Testing Rules (Playwright)
+
+- **Test location** — E2E tests live in `e2e/` (separate from unit tests in `src/__tests__/`); file naming: `*.spec.ts`
+- **Dedicated tsconfig** — `e2e/tsconfig.json` extends root config with `@playwright/test` types; relaxed `noUnusedLocals`/`noUnusedParameters`
+- **Custom fixture** — `e2e/fixtures/base-fixture.ts` provides `appPage`, `consoleErrors`, `consoleWarnings` fixtures with automatic console interception
+- **Whitelisted errors** — `WebGL context lost`, `WebGL not initialized` patterns are whitelisted in the base fixture (transient during GPU filter switching)
+- **`waitForAppReady()`** — navigates to `./`, waits for `#canvas` visible + `#status-message` disappear + 1s stabilization; must be called at start of every test
+- **`disableSmoothTransitions()`** — disables 300ms crossfade to avoid timing issues; call before any filter operations
+- **Filter stacking** — use `selectPreset()` helper (not `selectFilter()` multiple times); `selectFilter()` replaces the current filter, it does not stack
+- **Test hook `__TEST_APP__`** — dev-only global exposing `getFPS()`, `getFilterStack()`, `isWebGLEnabled()`, `triggerWebGLContextLoss()`; only available when `import.meta.env.DEV` is true
+- **CDP for memory tests** — `getHeapUsage()` and `forceGC()` use Chrome DevTools Protocol; always use try/finally for CDP session cleanup
+- **`test.info().attach()`** — use instead of `console.log()` for diagnostic data; visible in the HTML report
+- **Playwright config** — Chromium with `--use-fake-device-for-media-stream`, `--use-gl=swiftshader`, `--js-flags=--expose-gc`; timeout 90s, workers 1, no retries, trace on failure
+- **WebGL canvases are internal** — `WebGLFilterBase` creates canvases via `document.createElement("canvas")` without DOM insertion; cannot query them via `querySelectorAll("canvas")`; use `__TEST_APP__` hook instead
+- **FPS threshold** — 15 FPS minimum in SwiftShader (software rendering); real browsers with GPU should achieve 30+ FPS
+- **E2E not in pre-commit** — `validate` script runs unit tests only; E2E tests are manual (`npm run test:e2e`) due to ~12 min runtime
+- **ESLint for E2E** — relaxed config block in `eslint.config.js` for `e2e/**/*.ts`: `explicit-function-return-type: off`, `strict-boolean-expressions: off`, `no-explicit-any: off`, `no-console: off`
+
 ### Code Quality & Style Rules
 
 - **No `console.*`** — `no-console: warn` with only `warn`/`error` allowed; use `Logger.info()`, `Logger.debug()`, `Logger.warn()`, `Logger.error()` instead
@@ -84,6 +103,9 @@ _This file contains critical rules and patterns that AI agents must follow when 
 ### Development Workflow Rules
 
 - **`validate` is the full check** — runs `type-check && test:run && lint && lint:md && format:check` in sequence; must pass clean before merge
+- **E2E verification on story/tech-spec completion** — after implementing a story or tech-spec, run `npm run test:e2e` to verify no E2E regressions; if the change affects filters, UI controls, presets, WebGL, or the rendering pipeline, update or add E2E tests accordingly
+- **When to update E2E tests** — new filter: add to `getFilterTypes()`/`getWebGLFilterTypes()` arrays in `filter-helpers.ts`; new preset: add to preset test arrays in `filters-cpu.spec.ts` and `filters-gpu.spec.ts`; new UI control: add helper in `filter-helpers.ts`; changed `__TEST_APP__` hook: update all specs using it
+- **E2E completion checklist** — (1) `npm run validate` passes (unit tests + lint + format), (2) `npm run test:e2e` passes (95 E2E tests), (3) both `tsconfig.json` and `e2e/tsconfig.json` type-check clean
 - **Build is type-check first** — `tsc && vite build`; TypeScript errors block bundling
 - **GitHub Pages base path** — Vite base set to `/Js-CameraExperiment/`; all asset paths must be relative
 - **Single HTML file** — all CSS is inline in `index.html`; no CSS modules, no separate stylesheets
@@ -100,7 +122,7 @@ _This file contains critical rules and patterns that AI agents must follow when 
 - **`data[i]!` is required and safe** — `noUncheckedIndexedAccess` forces `!` on pixel array access; loop bounds guarantee in-range
 - **Never hardcode filter display names** — always use `I18n.t().filters.{type}` for user-facing names
 - **French is UI default** — `<html lang="fr">`; both `fr` and `en` translations required for all strings
-- **Adding a new filter requires 7+ files** — types union, `AVAILABLE_FILTERS`, filter class, test, i18n entries (both languages), `main.ts` registration; optionally WebGL variant and parameter definitions
+- **Adding a new filter requires 7+ files** — types union, `AVAILABLE_FILTERS`, filter class, test, i18n entries (both languages), `main.ts` registration; optionally WebGL variant and parameter definitions; update E2E filter type arrays in `e2e/helpers/filter-helpers.ts`
 - **No `instanceof` on ImageData** — causes strict-boolean-expressions error; rely on TypeScript type system instead
 - **`StoredSettings.version` must be `6`** — `SettingsStorage.load()` rejects any other version; increment only when schema changes
 

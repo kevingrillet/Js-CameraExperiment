@@ -299,12 +299,12 @@ export class RenderPipeline {
   private cleanupStack(preserveFilters?: Set<Filter>): void {
     for (const filter of this.filterStack) {
       // Skip cleanup for filters reused in the new stack
-      if (preserveFilters !== undefined && preserveFilters.has(filter)) {
+      if (preserveFilters?.has(filter) === true) {
         continue;
       }
-      if (filter.cleanup !== undefined && this.cleanupRegistry.has(filter)) {
+      if (this.cleanupRegistry.has(filter)) {
         try {
-          filter.cleanup();
+          filter.cleanup?.();
           Logger.debug(
             `Cleaned up filter: ${filter.constructor.name}`,
             "RenderPipeline"

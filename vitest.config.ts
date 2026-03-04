@@ -10,6 +10,7 @@ export default defineConfig({
       "**/node_modules/**",
       "**/dist/**",
       "**/.{idea,git,cache,output,temp}/**",
+      "e2e/**",
       // Tests nécessitant APIs navigateur non disponibles dans Happy-DOM
       "**/FPSCounter.test.ts", // Utilise performance.now() incompatible avec vi.useFakeTimers()
     ],
