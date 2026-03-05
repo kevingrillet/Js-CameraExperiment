@@ -10,6 +10,7 @@ import {
   disableSmoothTransitions,
 } from "./helpers/filter-helpers";
 
+// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
 const MIN_FPS = process.env.CI ? 10 : 15;
 
 test.describe("FPS Validation", () => {
