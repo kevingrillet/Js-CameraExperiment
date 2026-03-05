@@ -11,6 +11,9 @@ import { forceGC, getHeapUsage } from "./helpers/memory-helpers";
 const MB = 1024 * 1024;
 
 test.describe("Memory Leak Detection", () => {
+  // Memory tests need extra time: 3 cycles × 21 filters × 1s = 63s minimum
+  test.describe.configure({ timeout: 180_000 });
+
   // ── Task 6.1: CPU filter cycling memory test ──
 
   test("CPU filter cycling does not leak memory", async ({

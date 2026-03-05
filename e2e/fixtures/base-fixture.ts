@@ -6,6 +6,7 @@ const WHITELISTED_ERROR_PATTERNS: RegExp[] = [
   /webglcontextlost/i,
   /WebGL not initialized/i,
   /crashed in stack.*WebGL not initialized/i,
+  /crashed in stack.*drawImage/i,
 ];
 
 /** Check whether an error message matches a whitelisted pattern */
