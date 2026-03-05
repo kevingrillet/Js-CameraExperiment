@@ -13,7 +13,10 @@ const MB = 1024 * 1024;
 test.describe("Memory Leak Detection", () => {
   // ── Task 6.1: CPU filter cycling memory test ──
 
-  test("CPU filter cycling does not leak memory", async ({ appPage }) => {
+  test("CPU filter cycling does not leak memory", async ({
+    appPage,
+    consoleErrors,
+  }) => {
     await waitForAppReady(appPage);
     await disableSmoothTransitions(appPage);
 
@@ -51,11 +54,20 @@ test.describe("Memory Leak Detection", () => {
       growth,
       `Heap grew ${(growth / MB).toFixed(2)} MB between cycle 2 and 3 (limit: 10 MB)`
     ).toBeLessThan(10 * MB);
+
+    // No console errors during intensive filter cycling
+    expect(
+      consoleErrors,
+      "Console errors during CPU filter cycling"
+    ).toHaveLength(0);
   });
 
   // ── Task 6.2: GPU filter cycling memory test ──
 
-  test("GPU filter cycling does not leak memory", async ({ appPage }) => {
+  test("GPU filter cycling does not leak memory", async ({
+    appPage,
+    consoleErrors,
+  }) => {
     await waitForAppReady(appPage);
     await disableSmoothTransitions(appPage);
     await enableGPU(appPage);
@@ -92,11 +104,20 @@ test.describe("Memory Leak Detection", () => {
       growth,
       `GPU heap grew ${(growth / MB).toFixed(2)} MB between cycle 2 and 3 (limit: 10 MB)`
     ).toBeLessThan(10 * MB);
+
+    // No console errors during intensive GPU filter cycling
+    expect(
+      consoleErrors,
+      "Console errors during GPU filter cycling"
+    ).toHaveLength(0);
   });
 
   // ── Task 6.3: Sustained rendering memory test ──
 
-  test("Sustained rendering does not leak memory", async ({ appPage }) => {
+  test("Sustained rendering does not leak memory", async ({
+    appPage,
+    consoleErrors,
+  }) => {
     await waitForAppReady(appPage);
     await disableSmoothTransitions(appPage);
 
@@ -142,5 +163,11 @@ test.describe("Memory Leak Detection", () => {
         `Heap changed ${(delta / MB).toFixed(2)} MB between ${(i - 1) * 10}s and ${i * 10}s (limit: 2 MB)`
       ).toBeLessThan(2 * MB);
     }
+
+    // No console errors during sustained rendering
+    expect(
+      consoleErrors,
+      "Console errors during sustained rendering"
+    ).toHaveLength(0);
   });
 });

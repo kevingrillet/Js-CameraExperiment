@@ -1,4 +1,4 @@
-import type { Page } from "@playwright/test";
+import { expect, type Page } from "@playwright/test";
 
 /** All 21 CPU filter types */
 const ALL_FILTER_TYPES = [
@@ -30,6 +30,31 @@ const WEBGL_FILTER_TYPES = ALL_FILTER_TYPES.filter((f) => f !== "none");
 
 export function getFilterTypes(): string[] {
   return [...ALL_FILTER_TYPES];
+}
+
+/**
+ * Assert the main #canvas has non-blank pixels.
+ * The main canvas always uses a 2D context; WebGL happens on offscreen canvases.
+ */
+export async function assertCanvasRendering(
+  page: Page,
+  label: string
+): Promise<void> {
+  const hasPixels = await page.evaluate(() => {
+    const canvas = document.getElementById("canvas") as HTMLCanvasElement;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) {
+      return false;
+    }
+    const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    for (let i = 0; i < data.length; i += 4) {
+      if (data[i]! > 0 || data[i + 1]! > 0 || data[i + 2]! > 0) {
+        return true;
+      }
+    }
+    return false;
+  });
+  expect(hasPixels, `Canvas is blank for ${label}`).toBe(true);
 }
 
 export function getWebGLFilterTypes(): string[] {
@@ -127,6 +152,29 @@ export async function getFPS(page: Page): Promise<number> {
     }
     return hook.getFPS();
   });
+}
+
+/**
+ * Programmatically set the filter stack to arbitrary filter types.
+ * Uses the __TEST_APP__ hook. Allows testing stacks beyond presets (e.g. 5 filters).
+ */
+export async function setFilterStack(
+  page: Page,
+  filterTypes: string[]
+): Promise<void> {
+  await page.evaluate((types) => {
+    const hook = (window as unknown as Record<string, unknown>)[
+      "__TEST_APP__"
+    ] as { setFilterStack: (t: string[]) => void } | undefined;
+    if (hook === undefined) {
+      throw new Error(
+        "__TEST_APP__ hook not found. Ensure the app is running in dev mode."
+      );
+    }
+    hook.setFilterStack(types);
+  }, filterTypes);
+  // Wait for filter stack to rebuild and render
+  await page.waitForTimeout(1_000);
 }
 
 /**

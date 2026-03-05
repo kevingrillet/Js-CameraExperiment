@@ -500,3 +500,30 @@ e2e/
 - TypeScript type-check: **PASS** (main tsconfig + e2e/tsconfig.json)
 - Unit tests: **502 passed** (35 files, 0 failures)
 - No regressions introduced
+
+## Code Review Notes
+
+**Review Date:** 2026-03-05
+**Reviewer:** Kevin (Code Review Workflow)
+**Findings:** 8 total (2 High, 3 Medium, 3 Low)
+**Resolution:** All 5 HIGH+MEDIUM issues fixed automatically; 3 LOW kept as-is
+
+### Fixes Applied
+
+| ID | Severity | Issue | Resolution |
+|---|---|---|---|
+| H1 | High | AC-16/AC-17: 5-filter stack never tested (presets max at 3 filters) | Added `setFilterStack()` test hook + helper; new "CPU/GPU 5-filter stack" tests with `[crt, nightvision, thermal, pixelate, invert]` |
+| H2 | High | AC-15: FPS stacking only reached 3-filter depth, no exponential check | Rewrote stacking test to build 1→5 filter stacks programmatically; added drop-ratio validation (≥0.4 per step) |
+| M1 | Medium | `assertCanvasRendering` duplicated in filters-cpu.spec.ts and filters-gpu.spec.ts | Extracted to `filter-helpers.ts` as shared export; both specs now import it |
+| M2 | Medium | memory.spec.ts didn't check `consoleErrors` — silent error masking during cycling | Added `consoleErrors` destructuring + assertions to all 3 memory tests |
+| M3 | Medium | fps.spec.ts didn't check `consoleErrors` in any test | Added `consoleErrors` destructuring + assertions to all FPS tests (per-filter + evolution + stacking) |
+| L1 | Low | Redundant `getFilterStack()` call in multi-preset tests | Kept — harmless double-verification |
+| L2 | Low | `no-console: "off"` and `no-explicit-any: "off"` unnecessary in ESLint e2e config | Kept — proactive relaxation for future test expansion |
+| L3 | Low | `files_to_modify` metadata underspecified (8 files missing) | Metadata only — no runtime impact |
+
+### Verification
+
+- TypeScript type-check: **PASS** (zero errors across all files)
+- Unit tests: **502 passed** (35 files, 0 failures)
+- No regressions introduced
+- Files changed: `src/main.ts`, `e2e/helpers/filter-helpers.ts`, `e2e/filters-cpu.spec.ts`, `e2e/filters-gpu.spec.ts`, `e2e/fps.spec.ts`, `e2e/memory.spec.ts`

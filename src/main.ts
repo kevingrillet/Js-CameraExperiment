@@ -220,6 +220,8 @@ class App {
         getFilterStack: (): string[] => [...this.currentFilterStack],
         isWebGLEnabled: (): boolean => this.webglEnabled,
         triggerWebGLContextLoss: (): void => this.handleWebGLContextLost(),
+        setFilterStack: (types: string[]): void =>
+          this.handleFilterStackChanged(types as FilterType[]),
       };
     }
 

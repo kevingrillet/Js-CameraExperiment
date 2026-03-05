@@ -6,8 +6,8 @@ import {
   enableGPU,
   enableFPS,
   getFPS,
+  setFilterStack,
   disableSmoothTransitions,
-  selectPreset,
 } from "./helpers/filter-helpers";
 
 test.describe("FPS Validation", () => {
@@ -18,6 +18,7 @@ test.describe("FPS Validation", () => {
   for (const filterType of cpuFilters) {
     test(`CPU filter "${filterType}" maintains >= 15 FPS`, async ({
       appPage,
+      consoleErrors,
     }) => {
       await waitForAppReady(appPage);
       await disableSmoothTransitions(appPage);
@@ -38,6 +39,8 @@ test.describe("FPS Validation", () => {
         fps,
         `CPU filter "${filterType}" FPS is ${fps} (minimum: 15)`
       ).toBeGreaterThanOrEqual(15);
+
+      expect(consoleErrors).toHaveLength(0);
     });
   }
 
@@ -48,6 +51,7 @@ test.describe("FPS Validation", () => {
   for (const filterType of gpuFilters) {
     test(`GPU filter "${filterType}" maintains >= 15 FPS`, async ({
       appPage,
+      consoleErrors,
     }) => {
       await waitForAppReady(appPage);
       await disableSmoothTransitions(appPage);
@@ -70,6 +74,8 @@ test.describe("FPS Validation", () => {
         fps,
         `GPU filter "${filterType}" FPS is ${fps} (minimum: 15)`
       ).toBeGreaterThanOrEqual(15);
+
+      expect(consoleErrors).toHaveLength(0);
     });
   }
 
@@ -77,6 +83,7 @@ test.describe("FPS Validation", () => {
 
   test("FPS recovers after switching from heavy to no filter", async ({
     appPage,
+    consoleErrors,
   }) => {
     await waitForAppReady(appPage);
     await disableSmoothTransitions(appPage);
@@ -122,53 +129,60 @@ test.describe("FPS Validation", () => {
     expect(heavyFPS, "Heavy filter FPS should not be 0").toBeGreaterThan(0);
     expect(lightFPS, "Light filter FPS should not be 0").toBeGreaterThan(0);
     expect(recoveredFPS, "Recovered FPS should not be 0").toBeGreaterThan(0);
+
+    expect(consoleErrors).toHaveLength(0);
   });
 
-  // ── Task 7.4: FPS stability with filter stacking ──
+  // ── Task 7.4: FPS stability with filter stacking (1 to 5 filters) ──
 
-  test("FPS degrades proportionally with filter stacking", async ({
+  test("FPS degrades proportionally with filter stacking up to 5", async ({
     appPage,
+    consoleErrors,
   }) => {
     await waitForAppReady(appPage);
     await disableSmoothTransitions(appPage);
     await enableFPS(appPage);
 
-    // Single filter baseline
-    await selectFilter(appPage, "sepia");
-    await appPage.waitForTimeout(3_000);
-    const fps1 = await getFPS(appPage);
+    // Incrementally build stacks from 1 to 5 filters
+    const stackFilters = ["sepia", "vignette", "chromatic", "edge", "invert"];
+    const fpsValues: number[] = [];
+    const results: string[] = [];
 
-    // Known presets with increasing stack depth
-    const presets = [
-      { key: "cinematic", expectedMin: 2 },
-      { key: "cyberpunk", expectedMin: 3 },
-      { key: "dreamSequence", expectedMin: 3 },
-    ] as const;
-
-    const results: string[] = [`Single filter (sepia): ${fps1} FPS`];
-
-    for (const preset of presets) {
-      const stack = await selectPreset(appPage, preset.key);
-      expect(
-        stack.length,
-        `Preset "${preset.key}" should load >= ${preset.expectedMin} filters`
-      ).toBeGreaterThanOrEqual(preset.expectedMin);
-
+    for (let depth = 1; depth <= 5; depth++) {
+      const stack = stackFilters.slice(0, depth);
+      await setFilterStack(appPage, stack);
       await appPage.waitForTimeout(3_000);
+
       const fps = await getFPS(appPage);
-      results.push(
-        `Preset "${preset.key}" (${stack.length} filters: ${stack.join(", ")}): ${fps} FPS`
-      );
+      fpsValues.push(fps);
+      results.push(`${depth} filter(s) [${stack.join(", ")}]: ${fps} FPS`);
 
       expect(
         fps,
-        `FPS should be > 0 for preset "${preset.key}"`
+        `FPS should be > 0 with ${depth} stacked filters`
       ).toBeGreaterThan(0);
     }
 
-    await test.info().attach("FPS Stacking Measurements", {
+    await test.info().attach("FPS Stacking Measurements (1-5)", {
       body: results.join("\n"),
       contentType: "text/plain",
     });
+
+    // AC-15: Verify degradation is not exponential.
+    // For each step, the drop ratio (fps[i]/fps[i-1]) should not accelerate.
+    // If degradation were exponential, successive ratios would decrease sharply.
+    // We check: no single step drops by more than 60% of the previous value.
+    for (let i = 1; i < fpsValues.length; i++) {
+      if (fpsValues[i - 1]! > 0) {
+        const ratio = fpsValues[i]! / fpsValues[i - 1]!;
+        expect(
+          ratio,
+          `FPS drop from ${i} to ${i + 1} filters is too steep (ratio ${ratio.toFixed(2)}; ` +
+            `${fpsValues[i - 1]} → ${fpsValues[i]} FPS). Possible O(n²) bug.`
+        ).toBeGreaterThanOrEqual(0.4);
+      }
+    }
+
+    expect(consoleErrors).toHaveLength(0);
   });
 });

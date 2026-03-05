@@ -5,35 +5,10 @@ import {
   enableGPU,
   selectPreset,
   getFilterStack,
+  setFilterStack,
   disableSmoothTransitions,
+  assertCanvasRendering,
 } from "./helpers/filter-helpers";
-
-/**
- * Assert the main #canvas has non-blank pixels.
- * The main canvas (#canvas) always uses a 2D context even in GPU mode.
- * WebGL rendering happens on internal offscreen canvases; the final result
- * is composited back onto the main 2D canvas by RenderPipeline.
- */
-async function assertCanvasRendering(
-  page: import("@playwright/test").Page,
-  label: string
-): Promise<void> {
-  const hasPixels = await page.evaluate(() => {
-    const canvas = document.getElementById("canvas") as HTMLCanvasElement;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) {
-      return false;
-    }
-    const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-    for (let i = 0; i < data.length; i += 4) {
-      if (data[i]! > 0 || data[i + 1]! > 0 || data[i + 2]! > 0) {
-        return true;
-      }
-    }
-    return false;
-  });
-  expect(hasPixels, `Canvas is blank for ${label}`).toBe(true);
-}
 
 test.describe("GPU Filter Smoke Tests", () => {
   // ── Task 4.1: Individual GPU filter smoke test ──
@@ -135,5 +110,32 @@ test.describe("GPU Filter Smoke Tests", () => {
 
     expect(consoleErrors).toHaveLength(0);
     await assertCanvasRendering(appPage, "GPU preset stacks");
+  });
+
+  // ── AC-17: GPU 5-filter stack test ──
+
+  test("GPU 5-filter stack renders without errors", async ({
+    appPage,
+    consoleErrors,
+  }) => {
+    await waitForAppReady(appPage);
+    await disableSmoothTransitions(appPage);
+    await enableGPU(appPage);
+    await appPage.waitForTimeout(500);
+
+    // Build a 5-filter GPU stack programmatically (max allowed by RenderPipeline)
+    const fiveFilters = ["crt", "nightvision", "thermal", "pixelate", "invert"];
+    await setFilterStack(appPage, fiveFilters);
+    await appPage.waitForTimeout(3_000);
+
+    // Verify stack depth
+    const stack = await getFilterStack(appPage);
+    expect(stack, "Filter stack should contain exactly 5 filters").toHaveLength(
+      5
+    );
+    expect(stack).toEqual(fiveFilters);
+
+    expect(consoleErrors).toHaveLength(0);
+    await assertCanvasRendering(appPage, "GPU 5-filter stack");
   });
 });

@@ -4,33 +4,10 @@ import {
   getFilterTypes,
   selectPreset,
   getFilterStack,
+  setFilterStack,
   disableSmoothTransitions,
+  assertCanvasRendering,
 } from "./helpers/filter-helpers";
-
-/**
- * Assert the main #canvas has non-blank pixels.
- * The main canvas always uses a 2D context; WebGL happens on offscreen canvases.
- */
-async function assertCanvasRendering(
-  page: import("@playwright/test").Page,
-  label: string
-): Promise<void> {
-  const hasPixels = await page.evaluate(() => {
-    const canvas = document.getElementById("canvas") as HTMLCanvasElement;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) {
-      return false;
-    }
-    const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-    for (let i = 0; i < data.length; i += 4) {
-      if (data[i]! > 0 || data[i + 1]! > 0 || data[i + 2]! > 0) {
-        return true;
-      }
-    }
-    return false;
-  });
-  expect(hasPixels, `Canvas is blank for ${label}`).toBe(true);
-}
 
 test.describe("CPU Filter Smoke Tests", () => {
   // ── Task 3.1: Individual CPU filter smoke test ──
@@ -126,5 +103,30 @@ test.describe("CPU Filter Smoke Tests", () => {
 
     expect(consoleErrors).toHaveLength(0);
     await assertCanvasRendering(appPage, "preset stacks");
+  });
+
+  // ── AC-16: CPU 5-filter stack test ──
+
+  test("CPU 5-filter stack renders without errors", async ({
+    appPage,
+    consoleErrors,
+  }) => {
+    await waitForAppReady(appPage);
+    await disableSmoothTransitions(appPage);
+
+    // Build a 5-filter stack programmatically (max allowed by RenderPipeline)
+    const fiveFilters = ["crt", "nightvision", "thermal", "pixelate", "invert"];
+    await setFilterStack(appPage, fiveFilters);
+    await appPage.waitForTimeout(2_000);
+
+    // Verify stack depth
+    const stack = await getFilterStack(appPage);
+    expect(stack, "Filter stack should contain exactly 5 filters").toHaveLength(
+      5
+    );
+    expect(stack).toEqual(fiveFilters);
+
+    expect(consoleErrors).toHaveLength(0);
+    await assertCanvasRendering(appPage, "CPU 5-filter stack");
   });
 });
