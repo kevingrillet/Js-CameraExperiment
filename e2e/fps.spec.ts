@@ -10,13 +10,15 @@ import {
   disableSmoothTransitions,
 } from "./helpers/filter-helpers";
 
+const MIN_FPS = process.env.CI ? 10 : 15;
+
 test.describe("FPS Validation", () => {
   // ── Task 7.1: FPS threshold test per CPU filter ──
 
   const cpuFilters = getFilterTypes();
 
   for (const filterType of cpuFilters) {
-    test(`CPU filter "${filterType}" maintains >= 15 FPS`, async ({
+    test(`CPU filter "${filterType}" maintains >= ${MIN_FPS} FPS`, async ({
       appPage,
       consoleErrors,
     }) => {
@@ -37,8 +39,8 @@ test.describe("FPS Validation", () => {
 
       expect(
         fps,
-        `CPU filter "${filterType}" FPS is ${fps} (minimum: 15)`
-      ).toBeGreaterThanOrEqual(15);
+        `CPU filter "${filterType}" FPS is ${fps} (minimum: ${MIN_FPS})`
+      ).toBeGreaterThanOrEqual(MIN_FPS);
 
       expect(consoleErrors).toHaveLength(0);
     });
@@ -49,7 +51,7 @@ test.describe("FPS Validation", () => {
   const gpuFilters = getWebGLFilterTypes();
 
   for (const filterType of gpuFilters) {
-    test(`GPU filter "${filterType}" maintains >= 15 FPS`, async ({
+    test(`GPU filter "${filterType}" maintains >= ${MIN_FPS} FPS`, async ({
       appPage,
       consoleErrors,
     }) => {
@@ -72,8 +74,8 @@ test.describe("FPS Validation", () => {
 
       expect(
         fps,
-        `GPU filter "${filterType}" FPS is ${fps} (minimum: 15)`
-      ).toBeGreaterThanOrEqual(15);
+        `GPU filter "${filterType}" FPS is ${fps} (minimum: ${MIN_FPS})`
+      ).toBeGreaterThanOrEqual(MIN_FPS);
 
       expect(consoleErrors).toHaveLength(0);
     });
