@@ -5,8 +5,8 @@
 - **Project**: Js-CameraExperiment
 - **Owner**: Kevin
 - **BMAD Level**: 2 (Medium Project, 5-15 stories)
-- **Overall Status**: ✅ All Done
-- **Total Stories**: 14 / 14 completed
+- **Overall Status**: 🔄 In Progress
+- **Total Stories**: 14 / 15 completed
 - **Total Tests**: 502 passing
 - **Package Version**: 1.6.0
 
@@ -22,6 +22,7 @@
 | E4 | Advanced Filters | 2/2 | ✅ Done |
 | E5 | Dynamic Parameters & Stacking | 4/4 | ✅ Done |
 | E6 | GPU Acceleration & Polish | 3/3 | ✅ Done |
+| E7 | Black & White Filter | 0/1 | 🔄 Todo |
 
 ---
 
@@ -71,6 +72,12 @@
 | 6.2 | Browser Compatibility | ✅ Done | V6 §6 |
 | 6.3 | Smooth Transitions & Error Resilience | ✅ Done | V6 §4,§8 |
 
+### Epic 7 — Black & White Filter
+
+| Story | Title | Status | Tech Spec |
+|-------|-------|--------|-----------|
+| 7.1 | Black & White Filter (CPU + WebGL) | 🔄 Todo | V7 |
+
 ---
 
 ## Tech Spec Traceability
@@ -83,6 +90,7 @@
 | V4 — Medium-Complexity Filters | Completed | 4.1 |
 | V5 — Advanced Filters | Completed | 4.2 |
 | V6 — Dynamic Parameters & Advanced Features | Completed | 5.1, 5.2, 5.3, 5.4, 6.1, 6.2, 6.3 |
+| V7 — Black & White Filter | In Progress | 7.1 |
 
 ---
 

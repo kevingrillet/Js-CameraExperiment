@@ -57,6 +57,7 @@ Add a new `"bw"` filter type backed by `BlackWhiteFilter` (Canvas 2D) and `Black
 ### Scope
 
 **In Scope:**
+
 - `src/filters/BlackWhiteFilter.ts` — Canvas 2D implementation
 - `src/filters/webgl/BlackWhiteFilterWebGL.ts` — WebGL 2.0 / GLSL ES 3.00 implementation
 - `src/filters/__tests__/BlackWhiteFilter.test.ts` — unit tests (CPU path)
@@ -67,6 +68,7 @@ Add a new `"bw"` filter type backed by `BlackWhiteFilter` (Canvas 2D) and `Black
 - `README.md` — update filter count (21→22), add BW entry, update file tree
 
 **Out of Scope:**
+
 - Preset definition
 - UI conditional disable of controls (grey-out is a UI-layer concern; documented as a note below)
 - A separate SmokeTest spec file (existing loop in filters-cpu.spec.ts / filters-gpu.spec.ts auto-covers it once the helper is updated)
@@ -88,6 +90,7 @@ threshold:      0–255, default 128
 ```
 
 **Active mode logic (CPU and GPU)**
+
 ```
 IF ditheringMode !== 0  → use Bayer ordered dithering (thresholdMode ignored)
 ELSE IF thresholdMode === 0 → use fixed threshold param
@@ -111,6 +114,7 @@ Standard Bayer orderings (values as fractions of N²):
 **Blue noise matrix (CPU)**
 
 Generated once in constructor with a seeded LCG (no `Math.random()` in render loop):
+
 ```typescript
 private generateBlueNoiseMatrix(): readonly number[][] {
   const SIZE = 64;
@@ -124,9 +128,11 @@ private generateBlueNoiseMatrix(): readonly number[][] {
   );
 }
 ```
+
 The matrix contains values in `[0, 1)`. At render time: `blueNoise[y % 64]![x % 64]! * 255` is the threshold.
 
 **Buffer reuse (zero-allocation render loop)**
+
 ```typescript
 // Allocate only when size changes
 if (this.originalDataBuffer?.length !== data.length) {
@@ -138,11 +144,13 @@ this.originalDataBuffer.set(data);
 **WebGL variant — GLSL ES 3.00 (WebGL 2.0)**
 
 The Bayer bit-interleaving computation requires integer bitwise ops (`&`, `>>`, `^`), which are only available in GLSL ES 3.00. Therefore `BlackWhiteFilterWebGL` must:
+
 - Call `this.initContext(true)` (prefer WebGL 2.0)
 - Use a custom `#version 300 es` vertex shader (replaces `STANDARD_VERTEX_SHADER`)
 - Implement custom `apply()` (not `applySimple()`) to bind two texture units
 
 Custom GLSL ES 3.00 vertex shader:
+
 ```glsl
 #version 300 es
 in vec2 a_position;
@@ -155,6 +163,7 @@ void main() {
 ```
 
 Fragment shader uniforms:
+
 ```
 u_texture       sampler2D   TEXTURE0 — input frame
 u_blueNoise     sampler2D   TEXTURE1 — 64×64 R8 blue noise texture
@@ -168,6 +177,7 @@ u_resolution    vec2        canvas width/height in pixels — for pixel-coord Ba
 GLSL Bayer computation (no arrays, pure math — works for all sizes via bit interleaving):
 
 **Verified formula** (tested against 2×2, 4×4, 8×8 canonical values):
+
 ```glsl
 float bayerThreshold(int px, int py, int n) {
   // n = log2(matrixSize): 1→2×2, 2→4×4, 3→8×8, 4→16×16
@@ -188,6 +198,7 @@ float bayerThreshold(int px, int py, int n) {
 ```
 
 GLSL random (for thresholdMode=1):
+
 ```glsl
 float rand(vec2 co, float seed) {
   return fract(sin(dot(co + vec2(seed * 0.001), vec2(12.9898, 78.233))) * 43758.5453);
@@ -195,6 +206,7 @@ float rand(vec2 co, float seed) {
 ```
 
 **Blue noise GPU texture creation** (constructor):
+
 ```typescript
 // Generate same LCG matrix as CPU path, pack into Uint8Array
 const noiseData = new Uint8Array(64 * 64);
@@ -207,6 +219,7 @@ for (let i = 0; i < 64 * 64; i++) {
 // Upload as R8 texture on TEXTURE1
 this.blueNoiseTexture = this.createBlueNoiseTexture(noiseData);
 ```
+
 Sample in GLSL: `texture(u_blueNoise, fract(v_texcoord * u_resolution / 64.0)).r`
 
 **UI grey-out note (implementation note for UI layer, NOT in this filter's scope):**
@@ -253,9 +266,11 @@ The `AdvancedSettingsModal` or filter-parameters panel should conditionally disa
 *(Ordered: types first → CPU filter → tests → WebGL filter → WebGL tests → translations → E2E helpers → README)*
 
 **T1 — `src/types/index.ts`**
+
 1. Add `| "bw"` to `FilterType` union (after `"blur"`, before `"chromatic"`)
 2. Add `{ type: "bw" }` to `AVAILABLE_FILTERS` array (alphabetical, between blur and chromatic)
 3. Add interface:
+
 ```typescript
 export interface BlackWhiteFilterParams {
   type: "bw";
@@ -264,9 +279,11 @@ export interface BlackWhiteFilterParams {
   ditheringMode: number; // 0=none | 1=bayer2 | 2=bayer4 | 3=bayer8 | 4=bayer16, default 0
 }
 ```
+
 4. Add `| BlackWhiteFilterParams` to `FilterParameters` discriminated union
-5. Add `bw: BlackWhiteFilterParams` to `FilterParametersMap`
-6. Add to `FILTER_PARAM_DEFS`:
+2. Add `bw: BlackWhiteFilterParams` to `FilterParametersMap`
+3. Add to `FILTER_PARAM_DEFS`:
+
 ```typescript
 bw: {
   thresholdMode:  { min: 0, max: 2, step: 1, default: 0 },
@@ -349,6 +366,7 @@ Helper for Bayer matrix selection:
 **T3 — `src/filters/__tests__/BlackWhiteFilter.test.ts`** (new file)
 
 Test suite coverage:
+
 ```
 describe("BlackWhiteFilter")
   it("should apply pure white to above-threshold pixel (amount mode)")
@@ -464,6 +482,7 @@ Methods:
 **JSDoc requirement (project convention — enforced by ESLint):** All exported methods (`apply`, `setParameters`, `getDefaultParameters`, `cleanup`) must have JSDoc block comments with `@param` and `@returns` tags.
 
 Fragment shader (GLSL ES 3.00) outline:
+
 ```glsl
 #version 300 es
 precision mediump float;
@@ -508,11 +527,13 @@ void main() {
 **T5 — `src/filters/webgl/__tests__/WebGLFilters.test.ts`** (modify — add import + describe block)
 
 Add import in the **"Multi-parameter filters"** comments section at the top of the file (after the existing `MotionDetectionFilterWebGL` import):
+
 ```typescript
 import { BlackWhiteFilterWebGL } from "../BlackWhiteFilterWebGL";
 ```
 
 Add describe block (same pattern as all other parameterised filters):
+
 ```
 describe("BlackWhiteFilterWebGL")
   it("should construct without throwing")
@@ -547,18 +568,21 @@ describe("BlackWhiteFilterWebGL")
 3. Update stale JSDoc comment: `/** All 20 GPU-capable filter types (excludes "none") */` → `/** All 21 GPU-capable filter types (excludes "none") */`
 
 This single array change automatically picks up `"bw"` in:
+
 - `getFilterTypes()` → used by `filters-cpu.spec.ts` loop
 - `getWebGLFilterTypes()` (derived from `ALL_FILTER_TYPES.filter(f => f !== "none")`) → used by `filters-gpu.spec.ts` loop
 
 **T8 — `README.md`**
 
 FR section:
+
 - Change "21 filtres disponibles" → "22 filtres disponibles"
 - Add entry after Blur entry:
   `- ⬛ **Noir & Blanc pur** : Conversion binaire par seuil de luminance (modes : seuil fixe, aléatoire, bruit bleu, tramage Bayer 2×2/4×4/8×8/16×16)`
 - Update filter tree: add `BlackWhiteFilter.ts` and in webgl/ add `BlackWhiteFilterWebGL.ts`
 
 EN section (both in same README under `[English]` anchor):
+
 - Change "21 filters" → "22 filters"
 - Add corresponding EN entry after Blur
 - Update EN file tree
@@ -566,6 +590,7 @@ EN section (both in same README under `[English]` anchor):
 ### Acceptance Criteria
 
 **AC1 — Filter renders without errors (CPU)**
+
 ```
 Given: the filter stack contains only "bw" with default parameters
 When:  a video frame is applied
@@ -575,6 +600,7 @@ And:   alpha channel is unchanged
 ```
 
 **AC2 — Filter renders without errors (GPU)**
+
 ```
 Given: GPU acceleration is enabled and the filter stack contains only "bw"
 When:  a video frame is applied
@@ -583,6 +609,7 @@ And:   no console.error is produced
 ```
 
 **AC3 — Amount mode threshold**
+
 ```
 Given: thresholdMode=0, threshold=200
 When:  a pixel with RGB (180,180,180) is processed (L≈180 < 200)
@@ -592,6 +619,7 @@ Then:  output pixel is (255,255,255)
 ```
 
 **AC4 — Bayer dithering overrides thresholdMode**
+
 ```
 Given: ditheringMode=1 (bayer2), thresholdMode=1 (random)
 When:  the same frame is applied twice
@@ -600,6 +628,7 @@ And:   all pixels are 0 or 255
 ```
 
 **AC5 — Blue noise mode is position-consistent**
+
 ```
 Given: thresholdMode=2 (bluerandom), ditheringMode=0
 When:  the same frame is applied twice
@@ -607,6 +636,7 @@ Then:  both outputs are identical (matrix is fixed, no Math.random())
 ```
 
 **AC6 — Parameter persistence**
+
 ```
 Given: params { thresholdMode:1, threshold:64, ditheringMode:2 } are set
 When:  the page is reloaded
@@ -614,6 +644,7 @@ Then:  SettingsStorage restores those parameters via cameraExperimentSettings_v6
 ```
 
 **AC7 — E2E CPU smoke**
+
 ```
 Given: Playwright filter-cpu smoke loop
 When:  filter "bw" is selected and 2 seconds pass
@@ -622,6 +653,7 @@ And:   canvas has non-blank pixels
 ```
 
 **AC8 — E2E GPU smoke**
+
 ```
 Given: Playwright filter-gpu smoke loop with GPU enabled
 When:  filter "bw" is selected and 2 seconds pass

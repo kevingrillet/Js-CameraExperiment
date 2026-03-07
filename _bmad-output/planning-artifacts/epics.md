@@ -7,6 +7,7 @@ inputDocuments:
   - _bmad-output/implementation-artifacts/tech-spec-v4-medium-complexity-filters.md
   - _bmad-output/implementation-artifacts/tech-spec-v5-advanced-filters.md
   - _bmad-output/implementation-artifacts/tech-spec-v6-dynamic-filter-parameters-advanced-features.md
+  - _bmad-output/implementation-artifacts/tech-spec-v7-black-white-filter.md
 ---
 
 # Js-CameraExperiment - Epic Breakdown
@@ -35,6 +36,7 @@ This document provides the complete epic and story breakdown for Js-CameraExperi
 - FR14: Browser compatibility detection
 - FR15: Smooth transitions between filter changes (300ms crossfade)
 - FR16: WebGL context loss auto-fallback
+- FR17: Pure Black & White (two-tone) filter with configurable threshold (0–255), three threshold strategies (amount / random / blue-noise), and five Bayer ordered dithering modes (none / 2×2 / 4×4 / 8×8 / 16×16); both Canvas 2D CPU and WebGL GPU paths required
 
 ### Non-Functional Requirements
 
@@ -66,6 +68,7 @@ This document provides the complete epic and story breakdown for Js-CameraExperi
 | FR14  | 6    | 6.2               |
 | FR15  | 6    | 6.3               |
 | FR16  | 6    | 6.3               |
+| FR17  | 7    | 7.1               |
 
 ## Epic List
 
@@ -75,6 +78,7 @@ This document provides the complete epic and story breakdown for Js-CameraExperi
 4. **Epic 4: Advanced Filters** — Medium-complexity (ASCII, Glitch, OilPainting, SobelRainbow) + Show-off (Vignette, ComicBook, DepthOfField, Kaleidoscope)
 5. **Epic 5: Dynamic Parameters & Stacking** — 39 parameter sliders, filter stacking, presets, LocalStorage persistence
 6. **Epic 6: GPU Acceleration & Polish** — WebGL shaders, browser compatibility, smooth transitions, context loss fallback
+7. **Epic 7: Black & White Filter** — Pure two-tone filter with configurable threshold, five Bayer dithering modes, three threshold strategies; both CPU and WebGL GPU paths
 
 ---
 
@@ -455,3 +459,57 @@ So that visual transitions feel polished rather than abrupt.
 **Given** 10 consecutive render errors occur
 **When** the error threshold is reached
 **Then** the render loop stops and an error callback notifies the user
+
+---
+
+## Epic 7: Black & White Filter
+
+Add a pure two-tone Black & White filter with configurable threshold, three threshold strategies (amount / random / blue-noise), and five Bayer ordered dithering modes. Both Canvas 2D CPU and WebGL 2.0 GPU paths are required, following all established codebase patterns.
+
+### Story 7.1: Black & White Filter (CPU + WebGL)
+
+As a user,
+I want a pure Black & White filter with dithering options,
+So that I can reduce my video feed to strict two-tone black or white pixels with artistic control over the threshold and grain.
+
+**Acceptance Criteria:**
+
+**Given** the user selects "Black & White"
+**When** the filter is applied in default mode (amount, no dithering, threshold 128)
+**Then** every pixel is either pure `#000000` or `#ffffff` based on its luminance (L = 0.299·R + 0.587·G + 0.114·B) compared to the threshold, at 100+ FPS on Canvas 2D
+
+**Given** the `thresholdMode` parameter is set to `random` (1)
+**When** the filter renders each frame
+**Then** each pixel's threshold is a uniform random value [0,255] per-pixel per-frame, creating an animated film-grain two-tone effect
+
+**Given** the `thresholdMode` parameter is set to `bluerandom` (2)
+**When** the filter renders
+**Then** each pixel's threshold is sampled from a fixed-seed 64×64 LCG blue-noise matrix (tiled), producing a lower-pattern noise distribution than `random`
+
+**Given** the `ditheringMode` parameter is set to any non-zero value (bayer2 / bayer4 / bayer8 / bayer16)
+**When** the filter renders
+**Then** Bayer ordered dithering takes precedence over `thresholdMode`, and each pixel's threshold is determined by the normalised Bayer matrix value at that pixel's coordinate
+
+**Given** the `ditheringMode` is non-zero
+**When** the parameters panel is displayed
+**Then** the `threshold` and `thresholdMode` sliders are visually disabled/greyed-out (UI layer concern, follow-up task)
+
+**Given** the WebGL toggle is enabled
+**When** the Black & White filter is active
+**Then** the WebGL 2.0 / GLSL ES 3.00 path is used, producing equivalent two-tone output (minor pixel-boundary divergence at exact threshold is acceptable for blue-noise mode)
+
+**Given** the user selects "Black & White" in the filter dropdown
+**When** the language is French
+**Then** the filter name and all three parameter labels appear correctly in French; when switched to English, all labels appear correctly in English
+
+**Given** the filter is active and the user switches to another filter
+**When** `cleanup()` is called
+**Then** `originalDataBuffer` is released and no memory leak occurs
+
+**Given** the E2E smoke test suite runs
+**When** the `"bw"` entry is present in `ALL_FILTER_TYPES` in `filter-helpers.ts`
+**Then** both `filters-cpu.spec.ts` and `filters-gpu.spec.ts` smoke loops cover the new filter automatically without additional spec files
+
+**Given** the application after V7
+**When** counting available filters
+**Then** 22 filters are listed in the dropdown, alphabetically sorted per language, with "Black & White" / "Noir et Blanc" appearing between "Blur" and "Chromatic Aberration"
