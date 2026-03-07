@@ -12,5 +12,11 @@
     "**/.DS_Store": true,
     "**/node_modules": true,
     "**/dist": true
+  },
+  "chat.tools.terminal.autoApprove": {
+    "npx lint-staged": true,
+    "npx npm-check-updates": true,
+    "npx playwright": true,
+    "npx vitest": true
   }
 }

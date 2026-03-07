@@ -313,12 +313,12 @@ e2e/                         # Tests E2E Playwright
 #### Qualité & Tests
 
 - **Vitest 4.0.18** : Framework de tests unitaires avec Happy-DOM (536 tests)
-- **Playwright 1.58.2** : Tests E2E sur Chromium avec caméra simulée (95 tests)
+- **Playwright 1.58.2** : Tests E2E sur Chromium avec caméra simulée (101 tests)
   - Filtres CPU/GPU smoke tests, stacks via presets
   - WebGL context loss et fallback Canvas2D automatique
   - Détection de fuites mémoire via CDP (heap metrics)
   - Validation FPS par filtre (seuil ≥ 15 FPS en SwiftShader)
-- **ESLint 10.0.2** : Linting avec typescript-eslint
+- **ESLint 10.0.3** : Linting avec typescript-eslint
 - **Prettier 3.8.1** : Formatage automatique du code
 - **MarkdownLint** : Validation des fichiers Markdown
 - **Husky + lint-staged** : Git hooks pour validation pre-commit
@@ -666,12 +666,12 @@ e2e/                         # Playwright E2E tests
 #### Quality & Testing
 
 - **Vitest 4.0.18**: Unit testing framework with Happy-DOM (536 tests)
-- **Playwright 1.58.2**: E2E tests on Chromium with simulated camera (95 tests)
+- **Playwright 1.58.2**: E2E tests on Chromium with simulated camera (101 tests)
   - CPU/GPU filter smoke tests, stacking via presets
   - WebGL context loss and automatic Canvas2D fallback
   - Memory leak detection via CDP (heap metrics)
   - FPS validation per filter (threshold ≥ 15 FPS on SwiftShader)
-- **ESLint 10.0.2**: Linting with typescript-eslint
+- **ESLint 10.0.3**: Linting with typescript-eslint
 - **Prettier 3.8.1**: Automatic code formatting
 - **MarkdownLint**: Markdown file validation
 - **Husky + lint-staged**: Git hooks for pre-commit validation
