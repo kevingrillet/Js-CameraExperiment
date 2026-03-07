@@ -46,6 +46,7 @@ export default defineConfig({
         // Dossiers spéciaux
         "_bmad/**",
         "_bmad-output/**",
+        "docs/**",
       ],
     },
   },
