@@ -185,7 +185,8 @@ src/
 ├── main.ts                  # Point d'entrée principal
 ├── core/                    # Composants principaux
 │   ├── FPSCounter.ts       # Compteur de frames par seconde
-│   └── RenderPipeline.ts   # Pipeline de rendu avec error handling
+│   ├── RenderPipeline.ts   # Pipeline de rendu avec error handling
+│   └── SettingsStorage.ts  # Persistance LocalStorage (V6)
 ├── filters/                 # Filtres vidéo (22 filtres)
 │   ├── Filter.ts           # Interface de base + validation
 │   ├── NoneFilter.ts       # Pas de filtre
@@ -193,28 +194,40 @@ src/
 │   ├── BlackWhiteFilter.ts # Noir & Blanc pur avec tramage Bayer et bruit bleu (V7)
 │   ├── BlurFilter.ts       # Flou doux séparable (V3)
 │   ├── ChromaticAberrationFilter.ts  # Aberration chromatique (V3)
-│   ├── InvertFilter.ts     # Inversion des couleurs
+│   ├── ComicBookFilter.ts  # Bande dessinée avec posterisation
+│   ├── CRTFilter.ts        # Effet CRT avec scanlines
+│   ├── DepthOfFieldFilter.ts     # Profondeur de champ (V6)
+│   ├── EdgeDetectionFilter.ts    # Détection de contours Sobel
 │   ├── GlitchFilter.ts     # Glitch/Datamosh avec artefacts temporels
+│   ├── InvertFilter.ts     # Inversion des couleurs
+│   ├── KaleidoscopeFilter.ts     # Symétrie radiale kaléidoscope
 │   ├── MotionDetectionFilter.ts  # Détection de mouvement
+│   ├── NightVisionFilter.ts      # Vision nocturne
 │   ├── OilPaintingFilter.ts      # Peinture à l'huile avec bilateral blur
 │   ├── PixelateFilter.ts   # Pixellisation Game Boy
-│   ├── CRTFilter.ts        # Effet CRT avec scanlines
 │   ├── RotoscopeFilter.ts  # Rotoscopie cartoon
-│   ├── EdgeDetectionFilter.ts    # Détection de contours Sobel
-│   ├── NightVisionFilter.ts      # Vision nocturne
 │   ├── SepiaFilter.ts      # Tons sépia vintage (V3)
 │   ├── SobelRainbowFilter.ts     # Sobel avec mapping HSL
 │   ├── ThermalFilter.ts    # Imagerie thermique (V3)
 │   ├── VHSFilter.ts        # Effet VHS vintage
+│   ├── VignetteFilter.ts   # Vignette artistique
+│   ├── webgl/              # Implémentations WebGL GPU (21 filtres)
 │   └── __tests__/          # Tests unitaires (158 tests, 21 fichiers)
+├── presets/
+│   └── PresetDefinitions.ts # 5 préréglages (Cinematic, Vintage, etc.)
 ├── ui/
-│   └── SettingsOverlay.ts  # Interface de paramètres
+│   ├── SettingsOverlay.ts  # Interface de paramètres
+│   ├── AdvancedSettingsModal.ts  # Modal paramètres avancés
+│   ├── FilterStackUI.ts    # UI pile de filtres (drag & drop)
+│   └── GitHubCorner.ts     # Lien GitHub animé
 ├── video/
 │   └── VideoSource.ts      # Gestion des sources vidéo
 ├── utils/
+│   ├── BrowserCompatibility.ts  # Détection fonctionnalités navigateur
 │   ├── CanvasCapture.ts    # Capture et téléchargement d'images
 │   ├── Logger.ts           # Logging centralisé (dev-only)
 │   ├── SobelOperator.ts    # Utility Sobel partagé (extraction V4)
+│   ├── Toast.ts            # Notifications toast (max 3, FIFO)
 │   └── __tests__/          # Tests unitaires des utilitaires
 ├── i18n/
 │   └── translations.ts     # Traductions FR/EN
@@ -289,7 +302,7 @@ e2e/                         # Tests E2E Playwright
 
 #### Core
 
-- **TypeScript 5.3.3** : Langage de programmation typé (strict mode)
+- **TypeScript 5.9.3** : Langage de programmation typé (strict mode)
 - **Vite 7.3.1** : Build tool et serveur de développement ultra-rapide
 - **Canvas 2D API** : Manipulation d'images en temps réel
 - **MediaStream API** (`navigator.mediaDevices.getUserMedia()`) : Accès à la webcam
@@ -305,8 +318,8 @@ e2e/                         # Tests E2E Playwright
   - WebGL context loss et fallback Canvas2D automatique
   - Détection de fuites mémoire via CDP (heap metrics)
   - Validation FPS par filtre (seuil ≥ 15 FPS en SwiftShader)
-- **ESLint 9.18.0** : Linting avec typescript-eslint
-- **Prettier 3.2.0** : Formatage automatique du code
+- **ESLint 10.0.2** : Linting avec typescript-eslint
+- **Prettier 3.8.1** : Formatage automatique du code
 - **MarkdownLint** : Validation des fichiers Markdown
 - **Husky + lint-staged** : Git hooks pour validation pre-commit
 - **GitHub Actions** : CI/CD avec pipeline de validation automatique
@@ -327,7 +340,7 @@ L'IA a généré :
 - Pipeline de validation CI/CD (type-check, lint, format, tests)
 - Documentation technique et user-facing
 
-Le code respecte des standards stricts : TypeScript 5.3 strict mode, ESLint zero warnings, Prettier formatting, et performance 30-120 FPS sur flux 1080p.
+Le code respecte des standards stricts : TypeScript 5.9 strict mode, ESLint zero warnings, Prettier formatting, et performance 30-120 FPS sur flux 1080p.
 
 ### 📄 Licence
 
@@ -525,7 +538,8 @@ src/
 ├── main.ts                  # Main entry point
 ├── core/                    # Core components
 │   ├── FPSCounter.ts       # Frames per second counter
-│   └── RenderPipeline.ts   # Rendering pipeline with error handling
+│   ├── RenderPipeline.ts   # Rendering pipeline with error handling
+│   └── SettingsStorage.ts  # LocalStorage persistence (V6)
 ├── filters/                 # Video filters (22 filters)
 │   ├── Filter.ts           # Base interface + validation
 │   ├── NoneFilter.ts       # No filter
@@ -533,28 +547,40 @@ src/
 │   ├── BlackWhiteFilter.ts # Pure Black & White with Bayer dithering and blue-noise (V7)
 │   ├── BlurFilter.ts       # Soft focus separable blur (V3)
 │   ├── ChromaticAberrationFilter.ts  # Chromatic aberration (V3)
-│   ├── InvertFilter.ts     # Color inversion
+│   ├── ComicBookFilter.ts  # Comic book with posterization
+│   ├── CRTFilter.ts        # CRT effect with scanlines
+│   ├── DepthOfFieldFilter.ts     # Depth of field (V6)
+│   ├── EdgeDetectionFilter.ts    # Sobel edge detection
 │   ├── GlitchFilter.ts     # Glitch/Datamosh with temporal artifacts
+│   ├── InvertFilter.ts     # Color inversion
+│   ├── KaleidoscopeFilter.ts     # Radial kaleidoscope symmetry
 │   ├── MotionDetectionFilter.ts  # Motion detection
+│   ├── NightVisionFilter.ts      # Night vision
 │   ├── OilPaintingFilter.ts      # Oil painting with bilateral blur
 │   ├── PixelateFilter.ts   # Game Boy pixelation
-│   ├── CRTFilter.ts        # CRT effect with scanlines
 │   ├── RotoscopeFilter.ts  # Cartoon rotoscoping
-│   ├── EdgeDetectionFilter.ts    # Sobel edge detection
-│   ├── NightVisionFilter.ts      # Night vision
 │   ├── SepiaFilter.ts      # Vintage sepia tone (V3)
 │   ├── SobelRainbowFilter.ts     # Sobel with HSL mapping
 │   ├── ThermalFilter.ts    # Thermal imaging (V3)
 │   ├── VHSFilter.ts        # Vintage VHS effect
+│   ├── VignetteFilter.ts   # Artistic vignette
+│   ├── webgl/              # WebGL GPU implementations (21 filters)
 │   └── __tests__/          # Unit tests (158 tests, 21 files)
+├── presets/
+│   └── PresetDefinitions.ts # 5 presets (Cinematic, Vintage, etc.)
 ├── ui/
-│   └── SettingsOverlay.ts  # Settings interface
+│   ├── SettingsOverlay.ts  # Settings interface
+│   ├── AdvancedSettingsModal.ts  # Advanced parameters modal
+│   ├── FilterStackUI.ts    # Filter stack UI (drag & drop)
+│   └── GitHubCorner.ts     # Animated GitHub link
 ├── video/
 │   └── VideoSource.ts      # Video source management
 ├── utils/
+│   ├── BrowserCompatibility.ts  # Browser feature detection
 │   ├── CanvasCapture.ts    # Canvas capture and download
 │   ├── Logger.ts           # Centralized logging (dev-only)
 │   ├── SobelOperator.ts    # Shared Sobel utility (V4 extraction)
+│   ├── Toast.ts            # Toast notifications (max 3, FIFO)
 │   └── __tests__/          # Unit tests for utilities
 ├── i18n/
 │   └── translations.ts     # FR/EN translations
@@ -629,7 +655,7 @@ e2e/                         # Playwright E2E tests
 
 #### Core
 
-- **TypeScript 5.3.3**: Typed programming language (strict mode)
+- **TypeScript 5.9.3**: Typed programming language (strict mode)
 - **Vite 7.3.1**: Ultra-fast build tool and development server
 - **Canvas 2D API**: Real-time image manipulation
 - **MediaStream API** (`navigator.mediaDevices.getUserMedia()`): Webcam access
@@ -645,8 +671,8 @@ e2e/                         # Playwright E2E tests
   - WebGL context loss and automatic Canvas2D fallback
   - Memory leak detection via CDP (heap metrics)
   - FPS validation per filter (threshold ≥ 15 FPS on SwiftShader)
-- **ESLint 9.18.0**: Linting with typescript-eslint
-- **Prettier 3.2.0**: Automatic code formatting
+- **ESLint 10.0.2**: Linting with typescript-eslint
+- **Prettier 3.8.1**: Automatic code formatting
 - **MarkdownLint**: Markdown file validation
 - **Husky + lint-staged**: Git hooks for pre-commit validation
 - **GitHub Actions**: CI/CD with automated validation pipeline
@@ -667,7 +693,7 @@ The AI generated:
 - CI/CD validation pipeline (type-check, lint, format, tests)
 - Technical and user-facing documentation
 
-The code follows strict standards: TypeScript 5.3 strict mode, ESLint zero warnings, Prettier formatting, and 30-120 FPS performance on 1080p streams.
+The code follows strict standards: TypeScript 5.9 strict mode, ESLint zero warnings, Prettier formatting, and 30-120 FPS performance on 1080p streams.
 
 ### 📄 License
 

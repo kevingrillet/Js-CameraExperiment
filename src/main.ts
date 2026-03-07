@@ -994,7 +994,15 @@ class App {
 
     if (helpEl !== null) {
       if (helpText.length > 0) {
-        helpEl.innerHTML = helpText;
+        // Build DOM safely instead of innerHTML — helpText may contain <br> from i18n
+        helpEl.textContent = "";
+        const parts = helpText.split("<br>");
+        for (let i = 0; i < parts.length; i++) {
+          if (i > 0) {
+            helpEl.appendChild(document.createElement("br"));
+          }
+          helpEl.appendChild(document.createTextNode(parts[i] ?? ""));
+        }
         helpEl.style.display = "block";
       } else {
         helpEl.style.display = "none";
@@ -1030,12 +1038,21 @@ class App {
 }
 
 // Start the application when DOM is loaded
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", () => {
+function initApp(): void {
+  try {
     new App();
-  });
+  } catch (error) {
+    console.error(
+      "Failed to initialize app",
+      error instanceof Error ? error.message : String(error)
+    );
+  }
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initApp);
 } else {
-  new App();
+  initApp();
 }
 
 export {};

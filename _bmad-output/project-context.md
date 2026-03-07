@@ -1,7 +1,7 @@
 ---
 project_name: "Js-CameraExperiment"
 user_name: "Kevin"
-date: "2026-02-28"
+date: "2026-03-07"
 sections_completed:
   ["technology_stack", "language_rules", "framework_rules", "testing_rules", "quality_rules", "workflow_rules", "anti_patterns"]
 status: "complete"
@@ -144,7 +144,4 @@ _This file contains critical rules and patterns that AI agents must follow when 
 - Review quarterly for outdated rules
 - Remove rules that become obvious over time
 
-_Last Updated: 2026-02-28_
-
-- **No `instanceof` on ImageData** — causes strict-boolean-expressions error; rely on TypeScript type system instead
-- **`StoredSettings.version` must be `6`** — `SettingsStorage.load()` rejects any other version; increment only when schema changes
+_Last Updated: 2026-03-07_
