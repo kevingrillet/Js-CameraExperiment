@@ -52,9 +52,33 @@ export default tseslint.config(
     },
   },
   {
+    // Test files - relax unbound-method rule for vitest spies/mocks
+    files: ["**/__tests__/**/*.ts", "**/*.test.ts"],
+    rules: {
+      "@typescript-eslint/unbound-method": "off",
+    },
+  },
+  {
+    // E2E test files - relaxed rules for Playwright tests
+    files: ["e2e/**/*.ts"],
+    rules: {
+      "@typescript-eslint/no-unused-vars": [
+        "error",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
+      ],
+      "@typescript-eslint/explicit-function-return-type": "off",
+      "@typescript-eslint/strict-boolean-expressions": "off",
+      "@typescript-eslint/no-floating-promises": "error",
+      "@typescript-eslint/no-misused-promises": "error",
+      "@typescript-eslint/no-explicit-any": "off",
+      "no-console": "off",
+    },
+  },
+  {
     ignores: [
       "dist/**",
       "node_modules/**",
+      "coverage/**",
       "_bmad/**",
       "_bmad-output/**",
       "*.config.js",

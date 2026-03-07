@@ -15,7 +15,9 @@ export class RenderPipeline {
   private offscreenCanvas: HTMLCanvasElement;
   private offscreenCtx: CanvasRenderingContext2D;
   private videoSource: VideoSource;
-  private currentFilter: Filter;
+  private filterStack: Filter[] = [];
+  private filterTypeStack: FilterType[] = [];
+  private cleanupRegistry: Set<Filter> = new Set();
   private fpsCounter: FPSCounter;
   private animationId: number | null = null;
   private aspectRatioMode: AspectRatioMode = "contain";
@@ -25,7 +27,13 @@ export class RenderPipeline {
   private readonly MAX_CONSECUTIVE_ERRORS = 10;
   private onErrorCallback?: (error: Error) => void;
   private isPaused: boolean = false;
-  private currentFilterType: FilterType = "none";
+
+  // Smooth transitions state
+  private smoothTransitionsEnabled: boolean = true;
+  private transitionActive: boolean = false;
+  private transitionStartTime: number = 0;
+  private transitionOldStack: Filter[] = [];
+  private readonly TRANSITION_DURATION = 300; // ms
 
   constructor(
     canvas: HTMLCanvasElement,
@@ -35,7 +43,8 @@ export class RenderPipeline {
   ) {
     this.canvas = canvas;
     this.videoSource = videoSource;
-    this.currentFilter = initialFilter;
+    this.filterStack = [initialFilter];
+    this.filterTypeStack = ["none"];
     this.fpsCounter = fpsCounter;
 
     const ctx = canvas.getContext("2d", { alpha: false });
@@ -48,6 +57,7 @@ export class RenderPipeline {
     this.offscreenCanvas = document.createElement("canvas");
     const offscreenCtx = this.offscreenCanvas.getContext("2d", {
       alpha: false,
+      willReadFrequently: true,
     });
     if (offscreenCtx === null) {
       throw new Error("Unable to get offscreen 2D context");
@@ -78,26 +88,57 @@ export class RenderPipeline {
   }
 
   /**
-   * Change the active filter
-   * @param filter - The new filter to apply
+   * Set the filter stack (replaces all current filters)
+   * @param filters - Array of filters to apply sequentially
+   * @param filterTypes - Array of filter types for tracking
+   */
+  setFilterStack(filters: Filter[], filterTypes: FilterType[]): void {
+    // If already transitioning, complete old transition first
+    if (this.transitionActive) {
+      this.completeTransition(filters);
+    }
+
+    // Build set of new filters to avoid cleaning up reused instances
+    // (e.g., cached WebGL filter shared between old and new stacks)
+    const newFilterSet = new Set(filters);
+
+    // Start transition if enabled and we have an existing stack to crossfade from
+    if (
+      this.smoothTransitionsEnabled &&
+      this.filterStack.length > 0 &&
+      filters.length > 0
+    ) {
+      // Save old stack for blending (defer cleanup until transition completes)
+      this.transitionOldStack = [...this.filterStack];
+      this.transitionStartTime = Date.now();
+      this.transitionActive = true;
+      // Clear internal stack without running cleanup on old filters
+      this.filterStack = [];
+      this.cleanupRegistry.clear();
+    } else {
+      // No transition — cleanup old filters immediately (skip reused ones)
+      this.cleanupStack(newFilterSet);
+    }
+
+    // Set new filter stack
+    this.filterStack = filters;
+    this.filterTypeStack = filterTypes;
+
+    // Register filters that need cleanup
+    for (const filter of filters) {
+      if (filter.cleanup !== undefined) {
+        this.cleanupRegistry.add(filter);
+      }
+    }
+  }
+
+  /**
+   * Legacy method for backward compatibility - sets a single filter
+   * @param filter - The filter to apply
    * @param filterType - Type of the filter for tracking
    */
   setFilter(filter: Filter, filterType: FilterType): void {
-    this.currentFilterType = filterType;
-
-    // Cleanup old filter if it has cleanup method
-    if (this.currentFilter.cleanup !== undefined) {
-      try {
-        this.currentFilter.cleanup();
-      } catch (error) {
-        Logger.error(
-          "Filter cleanup failed",
-          error instanceof Error ? error : undefined,
-          "RenderPipeline"
-        );
-      }
-    }
-    this.currentFilter = filter;
+    this.setFilterStack([filter], [filterType]);
   }
 
   /**
@@ -114,6 +155,17 @@ export class RenderPipeline {
    */
   setShowFPS(show: boolean): void {
     this.showFPS = show;
+  }
+
+  /**
+   * Toggle smooth transitions between filter changes
+   * @param enabled - Whether to crossfade between filter stacks
+   */
+  setSmoothTransitions(enabled: boolean): void {
+    this.smoothTransitionsEnabled = enabled;
+    if (!enabled && this.transitionActive) {
+      this.completeTransition();
+    }
   }
 
   /**
@@ -184,11 +236,19 @@ export class RenderPipeline {
   }
 
   /**
-   * Get current filter type
+   * Get current filter type (first filter in stack for backward compatibility)
    * @returns The currently active filter type
    */
   getCurrentFilterType(): FilterType {
-    return this.currentFilterType;
+    return this.filterTypeStack[0] ?? "none";
+  }
+
+  /**
+   * Get current filter stack types
+   * @returns Array of active filter types
+   */
+  getFilterStack(): FilterType[] {
+    return [...this.filterTypeStack];
   }
 
   stop(): void {
@@ -196,6 +256,71 @@ export class RenderPipeline {
       cancelAnimationFrame(this.animationId);
       this.animationId = null;
     }
+
+    // Complete any active transition before full cleanup
+    if (this.transitionActive) {
+      this.completeTransition();
+    }
+
+    // F6 FIX - Cleanup all filters on stop to prevent memory leaks
+    this.cleanupStack();
+  }
+
+  /**
+   * Complete an active transition — cleanup old filter stack
+   * @param preserveFilters - Filters to skip cleanup on (reused in new stack)
+   */
+  private completeTransition(preserveFilters?: Filter[]): void {
+    const preserve =
+      preserveFilters !== undefined
+        ? new Set(preserveFilters)
+        : new Set(this.filterStack);
+
+    for (const filter of this.transitionOldStack) {
+      // Skip cleanup for filters reused in the current/new stack
+      if (preserve.has(filter)) {
+        continue;
+      }
+      try {
+        filter.cleanup?.();
+      } catch {
+        // Ignore cleanup errors during transition completion
+      }
+    }
+    this.transitionOldStack = [];
+    this.transitionActive = false;
+  }
+
+  /**
+   * Cleanup all filters in the stack and clear registry
+   * F6 FIX - Prevents memory leaks from accumulated ImageData buffers
+   * @param preserveFilters - Filters to skip cleanup on (reused in new stack)
+   */
+  private cleanupStack(preserveFilters?: Set<Filter>): void {
+    for (const filter of this.filterStack) {
+      // Skip cleanup for filters reused in the new stack
+      if (preserveFilters?.has(filter) === true) {
+        continue;
+      }
+      if (this.cleanupRegistry.has(filter)) {
+        try {
+          filter.cleanup?.();
+          Logger.debug(
+            `Cleaned up filter: ${filter.constructor.name}`,
+            "RenderPipeline"
+          );
+        } catch (error) {
+          Logger.error(
+            "Filter cleanup failed",
+            error instanceof Error ? error : undefined,
+            "RenderPipeline"
+          );
+        }
+      }
+    }
+    this.cleanupRegistry.clear();
+    this.filterStack = [];
+    this.filterTypeStack = [];
   }
 
   /**
@@ -232,9 +357,14 @@ export class RenderPipeline {
     this.isRendering = true;
 
     try {
-      // Set offscreen canvas to source dimensions
-      this.offscreenCanvas.width = sourceDimensions.width;
-      this.offscreenCanvas.height = sourceDimensions.height;
+      // Resize offscreen canvas only when dimensions change
+      if (
+        this.offscreenCanvas.width !== sourceDimensions.width ||
+        this.offscreenCanvas.height !== sourceDimensions.height
+      ) {
+        this.offscreenCanvas.width = sourceDimensions.width;
+        this.offscreenCanvas.height = sourceDimensions.height;
+      }
 
       // Draw source to offscreen canvas
       this.offscreenCtx.drawImage(
@@ -248,18 +378,73 @@ export class RenderPipeline {
       // Get fresh ImageData from canvas (after video draw)
       // Note: We always create new ImageData to avoid buffer pollution between frames
       // Some filters (like MotionDetection) modify the buffer directly
-      const imageData = this.offscreenCtx.getImageData(
+      let imageData = this.offscreenCtx.getImageData(
         0,
         0,
         sourceDimensions.width,
         sourceDimensions.height
       );
 
-      // Apply filter
-      const filteredData = this.currentFilter.apply(imageData);
+      // Clone source data for transition blending (before filters modify it)
+      let transitionSourceClone: ImageData | null = null;
+      if (this.transitionActive) {
+        transitionSourceClone = new ImageData(
+          new Uint8ClampedArray(imageData.data),
+          imageData.width,
+          imageData.height
+        );
+      }
+
+      // Apply filter stack sequentially
+      for (let i = 0; i < this.filterStack.length; i++) {
+        const filter = this.filterStack[i];
+        try {
+          imageData = filter!.apply(imageData);
+        } catch (error) {
+          // F22 FIX - Filter error boundary: log error but continue with next filter
+          const filterType = this.filterTypeStack[i] ?? "unknown";
+          Logger.error(
+            `Filter ${filterType} crashed in stack`,
+            error instanceof Error ? error : new Error(String(error)),
+            "RenderPipeline"
+          );
+          // Continue with unfiltered data from previous filter
+        }
+      }
+
+      // Smooth transition blending: crossfade between old and new filter stacks
+      if (this.transitionActive && transitionSourceClone !== null) {
+        const elapsed = Date.now() - this.transitionStartTime;
+        const progress = Math.min(elapsed / this.TRANSITION_DURATION, 1.0);
+
+        if (progress >= 1.0) {
+          // Transition complete — cleanup old stack
+          this.completeTransition();
+        } else {
+          // Apply old filter stack to cloned source data
+          let oldData: ImageData = transitionSourceClone;
+          for (const oldFilter of this.transitionOldStack) {
+            try {
+              oldData = oldFilter.apply(oldData);
+            } catch {
+              // Skip crashed old filter
+            }
+          }
+
+          // Blend old and new results: weighted pixel interpolation
+          const newPixels = imageData.data;
+          const oldPixels = oldData.data;
+          for (let i = 0; i < newPixels.length; i++) {
+            newPixels[i] = Math.round(
+              (oldPixels[i] ?? 0) * (1 - progress) +
+                (newPixels[i] ?? 0) * progress
+            );
+          }
+        }
+      }
 
       // Put filtered data back
-      this.offscreenCtx.putImageData(filteredData, 0, 0);
+      this.offscreenCtx.putImageData(imageData, 0, 0);
 
       // Clear main canvas
       this.ctx.fillStyle = "#000000";
@@ -404,8 +589,6 @@ export class RenderPipeline {
   cleanup(): void {
     this.stop();
     window.removeEventListener("resize", this.handleResize);
-    if (this.currentFilter.cleanup !== undefined) {
-      this.currentFilter.cleanup();
-    }
+    // Filters are cleaned up in stop() method via cleanupStack()
   }
 }

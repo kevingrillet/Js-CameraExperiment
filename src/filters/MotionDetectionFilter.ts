@@ -11,24 +11,24 @@ export class MotionDetectionFilter implements Filter {
   private motionHeatmap: Uint8ClampedArray | null = null;
 
   /**
-   * Minimum pixel difference (0-255) to consider as motion
-   * Lower values = more sensitive to small changes
+   * Minimum pixel difference (10-100) to consider as motion
+   * Default: 30 - Lower values = more sensitive to small changes
    * Higher values = only detect significant changes
    */
-  private readonly MOTION_THRESHOLD = 25;
+  private sensitivity = 30;
 
   /**
-   * Noise reduction threshold to filter out camera sensor noise
-   * Small differences below this value are ignored
+   * Noise reduction threshold (0-10) to filter out camera sensor noise
+   * Default: 3 - Small differences below this value are ignored
    */
-  private readonly NOISE_REDUCTION = 3;
+  private noiseFilter = 3;
 
   /**
-   * Decay factor for motion trail (0-1)
-   * Higher values = motion fades slower (longer trail)
+   * Decay factor for motion trail (0.5-0.98)
+   * Default: 0.85 - Higher values = motion fades slower (longer trail)
    * Lower values = motion fades faster (shorter trail)
    */
-  private readonly DECAY_FACTOR = 0.9;
+  private trailDuration = 0.85;
 
   apply(imageData: ImageData): ImageData {
     // Validate input
@@ -61,13 +61,13 @@ export class MotionDetectionFilter implements Filter {
     // Decay previous heatmap for motion trail effect
     for (let i = 0; i < this.motionHeatmap!.length; i += 4) {
       this.motionHeatmap![i] = Math.floor(
-        this.motionHeatmap![i]! * this.DECAY_FACTOR
+        this.motionHeatmap![i]! * this.trailDuration
       );
       this.motionHeatmap![i + 1] = Math.floor(
-        this.motionHeatmap![i + 1]! * this.DECAY_FACTOR
+        this.motionHeatmap![i + 1]! * this.trailDuration
       );
       this.motionHeatmap![i + 2] = Math.floor(
-        this.motionHeatmap![i + 2]! * this.DECAY_FACTOR
+        this.motionHeatmap![i + 2]! * this.trailDuration
       );
     }
 
@@ -90,23 +90,24 @@ export class MotionDetectionFilter implements Filter {
       let motion = (diffR + diffG + diffB) / 3;
 
       // Apply noise reduction
-      if (motion < this.NOISE_REDUCTION) {
+      if (motion < this.noiseFilter) {
         motion = 0;
       }
 
       // Apply threshold
-      if (motion < this.MOTION_THRESHOLD) {
+      if (motion < this.sensitivity) {
         motion = 0;
       }
 
       // Map motion intensity to color gradient
-      let red = 0;
-      let green = 0;
-      let blue = 0;
-
       if (motion > 0) {
+        let red: number;
+        let green: number;
+        let blue: number;
+
         if (motion < 85) {
           // Low motion: Blue to Cyan
+          red = 0;
           blue = 255;
           green = Math.floor((motion / 85) * 255);
         } else if (motion < 170) {
@@ -146,6 +147,35 @@ export class MotionDetectionFilter implements Filter {
     this.previousFrame.set(this.currentFrameBuffer);
 
     return imageData;
+  }
+
+  /**
+   * Update filter parameters at runtime
+   */
+  setParameters(params: Record<string, number>): void {
+    if (params["sensitivity"] !== undefined) {
+      this.sensitivity = Math.max(10, Math.min(100, params["sensitivity"]));
+    }
+    if (params["noiseFilter"] !== undefined) {
+      this.noiseFilter = Math.max(0, Math.min(10, params["noiseFilter"]));
+    }
+    if (params["trailDuration"] !== undefined) {
+      this.trailDuration = Math.max(
+        0.5,
+        Math.min(0.98, params["trailDuration"])
+      );
+    }
+  }
+
+  /**
+   * Get default parameter values
+   */
+  getDefaultParameters(): Record<string, number> {
+    return {
+      sensitivity: 30,
+      noiseFilter: 3,
+      trailDuration: 0.85,
+    };
   }
 
   /**

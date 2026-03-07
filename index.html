@@ -76,6 +76,8 @@
         border-radius: 12px;
         padding: 20px;
         min-width: 300px;
+        max-height: calc(100vh - 90px);
+        overflow-y: auto;
         backdrop-filter: blur(20px);
         transform: translateY(-20px);
         opacity: 0;
@@ -376,6 +378,262 @@
         80% {
           transform: rotate(10deg);
         }
+      }
+
+      /* Filter Stack UI Styles */
+      .filter-stack-container {
+        margin: 10px 0;
+      }
+
+      .filter-stack-header {
+        margin-bottom: 8px;
+      }
+
+      .filter-stack-chips {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .filter-chip {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 6px;
+        padding: 6px 10px;
+        cursor: grab;
+        transition: all 0.2s ease;
+      }
+
+      .filter-chip:active {
+        cursor: grabbing;
+      }
+
+      .filter-chip.dragging {
+        opacity: 0.5;
+        transform: scale(0.95);
+      }
+
+      .filter-chip.drop-target {
+        border-color: #667eea;
+        background: rgba(102, 126, 234, 0.2);
+        transform: translateX(4px);
+      }
+
+      .filter-drag-handle {
+        color: rgba(255, 255, 255, 0.4);
+        font-size: 14px;
+        line-height: 1;
+        cursor: grab;
+        user-select: none;
+      }
+
+      .filter-chip:active .filter-drag-handle {
+        cursor: grabbing;
+      }
+
+      .filter-order {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 20px;
+        height: 20px;
+        background: rgba(102, 126, 234, 0.3);
+        border-radius: 50%;
+        font-size: 11px;
+        font-weight: bold;
+        color: #fff;
+      }
+
+      .filter-name {
+        flex: 1;
+        font-size: 13px;
+        color: #fff;
+      }
+
+      .filter-remove {
+        background: transparent;
+        border: none;
+        padding: 0;
+        width: 16px;
+        height: 16px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0.7;
+        transition: opacity 0.2s ease;
+      }
+
+      .filter-remove:hover {
+        opacity: 1;
+      }
+
+      .filter-stack-add {
+        margin-top: 8px;
+      }
+
+      /* Advanced Settings Modal */
+      .advanced-settings-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 2000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(4px);
+      }
+
+      .advanced-settings-modal {
+        background: #1a1a1a;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        max-width: 600px;
+        width: 90%;
+        max-height: 80vh;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+      }
+
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 20px 24px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .modal-header h2 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 600;
+        color: #fff;
+      }
+
+      .modal-close {
+        background: transparent;
+        border: none;
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 32px;
+        line-height: 1;
+        cursor: pointer;
+        padding: 0;
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: color 0.2s ease;
+      }
+
+      .modal-close:hover {
+        color: #fff;
+      }
+
+      .modal-body {
+        overflow-y: auto;
+        padding: 16px 24px;
+      }
+
+      .accordion-section {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      }
+
+      .accordion-section:last-child {
+        border-bottom: none;
+      }
+
+      .accordion-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 0;
+        cursor: pointer;
+        transition: background 0.2s ease;
+      }
+
+      .accordion-header:hover {
+        background: rgba(255, 255, 255, 0.02);
+      }
+
+      .accordion-header .filter-name {
+        font-size: 15px;
+        font-weight: 500;
+        color: #fff;
+      }
+
+      .reset-button {
+        background: rgba(255, 59, 48, 0.15);
+        border: 1px solid #ff3b30;
+        color: #ff3b30;
+        padding: 4px 12px;
+        border-radius: 4px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .reset-button:hover {
+        background: rgba(255, 59, 48, 0.25);
+      }
+
+      .accordion-content {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+      }
+
+      .accordion-content.expanded {
+        max-height: 1000px;
+        padding-bottom: 12px;
+      }
+
+      .parameter-slider {
+        margin: 12px 0;
+      }
+
+      .parameter-label {
+        display: block;
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.8);
+        margin-bottom: 6px;
+      }
+
+      .parameter-range {
+        width: 100%;
+        height: 4px;
+        border-radius: 2px;
+        background: rgba(255, 255, 255, 0.1);
+        outline: none;
+        -webkit-appearance: none;
+      }
+
+      .parameter-range::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: #667eea;
+        cursor: pointer;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+      }
+
+      .parameter-range::-moz-range-thumb {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: #667eea;
+        cursor: pointer;
+        border: none;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
       }
     </style>
   </head>

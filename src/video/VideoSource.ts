@@ -101,19 +101,19 @@ export class VideoSource {
       // Provide more specific error messages
       if (error instanceof Error) {
         if (error.name === "NotAllowedError") {
-          throw new Error(t.errors.accessDenied);
+          throw new Error(t.errors.accessDenied, { cause: error });
         } else if (error.name === "NotFoundError") {
-          throw new Error(t.errors.notFound);
+          throw new Error(t.errors.notFound, { cause: error });
         } else if (error.name === "NotReadableError") {
-          throw new Error(t.errors.alreadyInUse);
+          throw new Error(t.errors.alreadyInUse, { cause: error });
         } else if (error.name === "OverconstrainedError") {
-          throw new Error(t.errors.notAvailable);
+          throw new Error(t.errors.notAvailable, { cause: error });
         } else if (error.name === "SecurityError") {
-          throw new Error(t.errors.securityError);
+          throw new Error(t.errors.securityError, { cause: error });
         }
       }
 
-      throw new Error(t.errors.generic);
+      throw new Error(t.errors.generic, { cause: error });
     }
   }
 

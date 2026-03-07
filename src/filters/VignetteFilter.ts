@@ -8,12 +8,12 @@ import { Logger } from "../utils/Logger";
 
 export class VignetteFilter implements Filter {
   /**
-   * Strength of vignette darkening at edges (0-1)
-   * 0.6 creates strong artistic vignette effect (60% darkening at corners)
+   * Strength of vignette darkening at edges (0.0-1.0)
+   * Default: 0.6 creates strong artistic vignette effect (60% darkening at corners)
    * Balance between visible effect (>0.5) and natural look (<0.8)
    * Higher than NightVision (0.4) for more dramatic artistic effect
    */
-  private readonly VIGNETTE_STRENGTH = 0.6;
+  private strength = 0.6;
 
   /**
    * Apply vignette effect to image data
@@ -60,11 +60,11 @@ export class VignetteFilter implements Filter {
         const normalizedDistance = distance / maxDistance;
 
         // Apply quadratic falloff for smooth transition
-        // darkness = 0 at center, VIGNETTE_STRENGTH at corners
-        // Clamp to [0, VIGNETTE_STRENGTH] for safety
+        // darkness = 0 at center, strength at corners
+        // Clamp to [0, strength] for safety
         const darkness = Math.min(
-          this.VIGNETTE_STRENGTH,
-          normalizedDistance * normalizedDistance * this.VIGNETTE_STRENGTH
+          this.strength,
+          normalizedDistance * normalizedDistance * this.strength
         );
 
         // Apply darkening to all RGB channels
@@ -85,5 +85,23 @@ export class VignetteFilter implements Filter {
       );
       throw error;
     }
+  }
+
+  /**
+   * Set filter parameters
+   * @param params - Partial parameters to update
+   */
+  setParameters(params: Record<string, number>): void {
+    if (params["strength"] !== undefined) {
+      this.strength = Math.max(0, Math.min(1, params["strength"]));
+    }
+  }
+
+  /**
+   * Get default parameter values
+   * @returns Default parameters object
+   */
+  getDefaultParameters(): Record<string, number> {
+    return { strength: 0.6 };
   }
 }

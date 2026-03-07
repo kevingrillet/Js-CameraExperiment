@@ -1,5 +1,7 @@
 # 🎥 Camera Experiment - Filtres Vidéo Temps Réel
 
+[![Validate](https://github.com/kevingrillet/Js-CameraExperiment/actions/workflows/validate.yml/badge.svg)](https://github.com/kevingrillet/Js-CameraExperiment/actions/workflows/validate.yml)
+
 [English](#english) | [Français](#français)
 
 ---
@@ -35,6 +37,23 @@ Application web interactive permettant d'appliquer des filtres vidéo en temps r
   - 🌡️ **Thermal** : Imagerie thermique infrarouge (LUT 256 couleurs)
   - 📼 **VHS** : Effet VHS vintage avec glitches et tracking lines
   - 🎭 **Vignette artistique** : Assombrissement radial pour effet spotlight
+- **🎛️ Paramètres dynamiques (V6)** : Contrôle en temps réel de 39 paramètres via sliders contextuels
+  - Taille des caractères ASCII, intensité du flou, offset chromatique, sensibilité de détection de contours
+  - Segments du kaléidoscope, intensité du grain nocturne, niveaux de couleur de la rotoscopie
+  - Paramètres avancés des filtres complexes (CRT, Glitch, VHS, OilPainting, DepthOfField)
+- **📚 Pile de filtres (V6)** : Combinez jusqu'à 5 filtres simultanément pour des effets créatifs
+  - Application séquentielle : filtre1 → filtre2 → filtre3 → ...
+  - Ajout/suppression dynamique via interface graphique
+  - Erreur recovery : retrait automatique des filtres crashés
+- **🎨 Préréglages (V6)** : 5 configurations prédéfinies pour démarrage rapide
+  - **Cinematic** : DepthOfField + Vignette (effet bokeh)
+  - **Vintage Film** : Sepia + Vignette + VHS (nostalgie analogique)
+  - **Cyberpunk** : Glitch + ChromaticAberration + CRT (futur dystopique)
+  - **Surveillance** : Thermal + EdgeDetection + NightVision (caméra sécurité)
+  - **Dream Sequence** : Blur + Vignette + ChromaticAberration (atmosphère onirique)
+- **💾 Persistance locale (V6)** : Sauvegarde automatique des paramètres et préférences
+  - LocalStorage avec debounce 500ms (évite écritures excessives)
+  - Restauration au démarrage, flush automatique avant fermeture de l'onglet
 - **📥 Téléchargement d'images** : Capture instantanée du flux filtré en PNG
 - **⏸️ Pause/Play** : Mise en pause du flux vidéo pour examiner une frame
 - **⌨️ Raccourcis clavier** : Barre d'espace (pause/play), S (télécharger)
@@ -42,6 +61,73 @@ Application web interactive permettant d'appliquer des filtres vidéo en temps r
 - **Gestion du ratio d'aspect** : Adaptation automatique ou forcée
 - **Interface multilingue** : Français et anglais
 - **Interface moderne** : Overlay de paramètres avec animation fluide
+
+### 🌐 Compatibilité navigateurs
+
+| Navigateur | Version minimale | Statut        | Notes                                  |
+| ---------- | ---------------- | ------------- | -------------------------------------- |
+| Chrome     | 90+              | ✅ Recommandé | Performance optimale, 60 FPS @ 1080p   |
+| Firefox    | 88+              | ✅ Recommandé | Performance similaire à Chrome         |
+| Safari     | 14+              | ⚠️ Supporté   | Légère dégradation sur OilPainting/DoF |
+| Edge       | 90+              | ✅ Recommandé | Basé sur Chromium, identique à Chrome  |
+
+**APIs requises** : MediaStream (webcam), Canvas 2D, Blob (téléchargement), requestAnimationFrame, localStorage (V6)
+
+**Problèmes connus** :
+
+- Safari 11-13 : Performance réduite sur filtres lourds (OilPainting, DepthOfField) - 15-20 FPS vs 30 FPS
+- Navigateurs mobiles : Non optimisé pour tactile (desktop focus)
+- HTTP : Accès webcam limité (HTTPS requis ou localhost)
+
+**Performance attendue (pile de 5 filtres lourds)** : 15+ FPS @ 720p, 8-12 FPS @ 1080p (Canvas 2D seulement)
+
+### ⚡ Accélération WebGL (V6 - Bêta)
+
+**État actuel** : Fonctionnalité expérimentale, **désactivée par défaut** pour maximiser la compatibilité.
+
+#### Prérequis
+
+- **WebGL 2.0** ou **WebGL 1.0** avec extension `OES_texture_float`
+- Navigateurs supportés : Chrome 90+, Firefox 88+, Safari 14+, Edge 90+
+
+#### Filtres accélérés
+
+Actuellement, seul le filtre **Blur** bénéficie de l'accélération GPU :
+
+- ✅ **BlurFilter** : Shader Gaussien séparable (2 passes)
+- ⏳ **DepthOfFieldFilter** : Planifié pour V7
+- ⏳ **OilPaintingFilter** : Planifié pour V7
+
+#### Performance
+
+**Amélioration mesurée (Blur @ 1080p)** :
+
+| Mode      | FPS       | Speedup  |
+| --------- | --------- | -------- |
+| Canvas 2D | 30-45 FPS | Baseline |
+| WebGL     | 60+ FPS   | ~1.5-2x  |
+
+#### Activation
+
+1. Ouvrir les **Paramètres** (⚙️)
+2. Cocher **"Utiliser l'accélération GPU (WebGL)"**
+3. Si WebGL n'est pas disponible, la case sera désactivée avec un avertissement
+
+#### Fallback automatique
+
+L'application bascule automatiquement sur Canvas 2D si :
+
+- WebGL n'est pas supporté par le navigateur
+- Le contexte WebGL est perdu (crash GPU, driver)
+- Une erreur de compilation de shader se produit
+
+**Message utilisateur** : "Accélération GPU désactivée en raison d'une erreur. Passage au rendu CPU."
+
+#### Limitations connues
+
+- 🚧 Seul Blur est accéléré en V6 (autres filtres restent en Canvas 2D même avec WebGL activé)
+- 🐛 Safari : Performances légèrement réduites vs Chrome/Firefox
+- 📱 Mobile : Non testé, utilisation déconseillée
 
 ### 🚀 Installation
 
@@ -82,6 +168,11 @@ L'application sera accessible sur `http://localhost:5173` (ou le port indiqué d
 - `npm run test` : Lance les tests unitaires en mode watch (Vitest)
 - `npm run test:run` : Exécute les tests une fois (pour CI/CD)
 - `npm run test:ui` : Interface visuelle pour les tests
+- `npm run test:coverage` : Génère un rapport de couverture de code
+- `npm run test:e2e` : Lance les tests E2E Playwright (Chromium)
+- `npm run test:e2e:headed` : Tests E2E avec navigateur visible
+- `npm run test:e2e:debug` : Debug interactif des tests E2E
+- `npm run test:e2e:report` : Ouvre le dernier rapport HTML Playwright
 - `npm run lint` : Vérifie le code avec ESLint
 - `npm run lint:fix` : Corrige automatiquement les erreurs ESLint
 - `npm run lint:md` : Vérifie les fichiers Markdown
@@ -130,6 +221,18 @@ src/
 │   └── translations.ts     # Traductions FR/EN
 └── types/
     └── index.ts            # Définitions TypeScript
+
+e2e/                         # Tests E2E Playwright
+├── fixtures/
+│   └── base-fixture.ts     # Fixture avec interception console + readiness
+├── helpers/
+│   ├── filter-helpers.ts   # Sélection filtres, GPU, FPS, presets
+│   └── memory-helpers.ts   # Métriques heap via CDP, forceGC
+├── filters-cpu.spec.ts     # 21 filtres CPU + stacks via presets
+├── filters-gpu.spec.ts     # 20 filtres GPU + stacks via presets
+├── webgl-errors.spec.ts    # Context loss + monitoring erreurs WebGL
+├── memory.spec.ts          # Détection fuites mémoire (CPU, GPU, soutenu)
+└── fps.spec.ts             # Seuils FPS par filtre + dégradation stack
 ```
 
 ### 🎮 Utilisation
@@ -140,13 +243,39 @@ src/
    - Sélectionner une webcam dans la liste
    - Ou charger une image depuis votre ordinateur
 4. **Appliquer un filtre** en le sélectionnant dans le menu déroulant
-5. **Contrôles vidéo** :
+5. **Utiliser les nouvelles fonctionnalités V6** :
+   - **Préréglages** : Sélectionnez un preset (Cinematic, Cyberpunk, etc.) pour charger une pile de filtres pré-configurée
+   - **Paramètres dynamiques** : Ajustez les sliders contextuels pour modifier l'intensité des filtres en temps réel
+   - **Paramètres avancés** : Cliquez sur "Paramètres avancés" pour accéder aux 39 paramètres de tous les filtres
+   - **Pile de filtres** : Ajoutez jusqu'à 5 filtres simultanément via le bouton "➕ Ajouter un filtre..."
+6. **Contrôles vidéo** :
    - Cliquer sur le canvas ou presser **Espace** pour mettre en pause/reprendre
    - Cliquer sur le bouton 📥 ou presser **S** pour télécharger l'image
-6. **Ajuster les options** :
+7. **Ajuster les options** :
    - Afficher/masquer le compteur FPS
    - Changer le ratio d'aspect (Auto, 16:9, 4:3, 1:1)
    - Basculer entre français et anglais
+
+**💡 Astuce** : Vos paramètres sont automatiquement sauvegardés et restaurés au prochain démarrage !
+
+### 📋 Changelog
+
+#### Version 1.6.0 (Janvier 2025) - V6 Dynamic Parameters & Advanced Features
+
+- ✨ **39 paramètres dynamiques** pour 21 filtres (sliders temps réel)
+- 📚 **Pile de filtres** : Combinez jusqu'à 5 filtres simultanément
+- 🎨 **5 préréglages** : Cinematic, Vintage Film, Cyberpunk, Surveillance, Dream Sequence
+- 💾 **Persistance LocalStorage** : Sauvegarde automatique des paramètres
+- 🎛️ **Interface avancée** : Modal avec accordéon pour tous les paramètres
+- 🛡️ **Error recovery** : Retrait automatique des filtres crashés
+- 🌐 **i18n améliorée** : 78+ nouvelles traductions FR/EN
+
+#### Version 1.5.0 - Initial Release
+
+- 21 filtres vidéo temps réel optimisés Canvas 2D
+- Support webcam et images statiques
+- Interface multilingue FR/EN
+- Téléchargement PNG, pause/play, compteur FPS
 
 ### 🔧 Technologies utilisées
 
@@ -162,7 +291,12 @@ src/
 
 #### Qualité & Tests
 
-- **Vitest 2.1.9** : Framework de tests unitaires avec Happy-DOM
+- **Vitest 4.0.18** : Framework de tests unitaires avec Happy-DOM (502 tests)
+- **Playwright 1.58.2** : Tests E2E sur Chromium avec caméra simulée (95 tests)
+  - Filtres CPU/GPU smoke tests, stacks via presets
+  - WebGL context loss et fallback Canvas2D automatique
+  - Détection de fuites mémoire via CDP (heap metrics)
+  - Validation FPS par filtre (seuil ≥ 15 FPS en SwiftShader)
 - **ESLint 9.18.0** : Linting avec typescript-eslint
 - **Prettier 3.2.0** : Formatage automatique du code
 - **MarkdownLint** : Validation des fichiers Markdown
@@ -236,6 +370,23 @@ Interactive web application for applying real-time video filters to webcam strea
   - 🌡️ **Thermal**: Infrared thermal imaging (256-color LUT)
   - 📼 **VHS**: Vintage VHS with glitches and tracking lines
   - 🎭 **Artistic Vignette**: Radial darkening for spotlight effect
+- **🎛️ Dynamic Parameters (V6)**: Real-time control of 39 parameters via contextual sliders
+  - ASCII character size, blur intensity, chromatic offset, edge detection sensitivity
+  - Kaleidoscope segments, night vision grain intensity, rotoscope color levels
+  - Advanced parameters for complex filters (CRT, Glitch, VHS, OilPainting, DepthOfField)
+- **📚 Filter Stack (V6)**: Combine up to 5 filters simultaneously for creative effects
+  - Sequential application: filter1 → filter2 → filter3 → ...
+  - Dynamic add/remove via graphical interface
+  - Error recovery: automatic removal of crashed filters
+- **🎨 Presets (V6)**: 5 predefined configurations for quick start
+  - **Cinematic**: DepthOfField + Vignette (bokeh effect)
+  - **Vintage Film**: Sepia + Vignette + VHS (analog nostalgia)
+  - **Cyberpunk**: Glitch + ChromaticAberration + CRT (dystopian future)
+  - **Surveillance**: Thermal + EdgeDetection + NightVision (security camera)
+  - **Dream Sequence**: Blur + Vignette + ChromaticAberration (dreamlike atmosphere)
+- **💾 Local Persistence (V6)**: Automatic saving of parameters and preferences
+  - LocalStorage with 500ms debounce (avoids excessive writes)
+  - Restoration on startup, automatic flush before tab close
 - **📥 Image Download**: Instant capture of filtered stream as PNG
 - **⏸️ Pause/Play**: Pause video stream to examine a specific frame
 - **⌨️ Keyboard Shortcuts**: Spacebar (pause/play), S (download)
@@ -243,6 +394,25 @@ Interactive web application for applying real-time video filters to webcam strea
 - **Aspect ratio management**: Automatic or forced adaptation
 - **Multilingual interface**: French and English
 - **Modern UI**: Settings overlay with smooth animations
+
+### 🌐 Browser Compatibility
+
+| Browser | Minimum Version | Status         | Notes                                 |
+| ------- | --------------- | -------------- | ------------------------------------- |
+| Chrome  | 90+             | ✅ Recommended | Optimal performance, 60 FPS @ 1080p   |
+| Firefox | 88+             | ✅ Recommended | Performance similar to Chrome         |
+| Safari  | 14+             | ⚠️ Supported   | Slight degradation on OilPainting/DoF |
+| Edge    | 90+             | ✅ Recommended | Chromium-based, identical to Chrome   |
+
+**Required APIs**: MediaStream (webcam), Canvas 2D, Blob (download), requestAnimationFrame, localStorage (V6)
+
+**Known Issues**:
+
+- Safari 11-13: Reduced performance on heavy filters (OilPainting, DepthOfField) - 15-20 FPS vs 30 FPS
+- Mobile browsers: Not optimized for touch (desktop focus)
+- HTTP: Limited webcam access (HTTPS required or localhost)
+
+**Expected Performance (stack of 5 heavy filters)**: 15+ FPS @ 720p, 8-12 FPS @ 1080p (Canvas 2D only)
 
 ### 🚀 Installation
 
@@ -283,6 +453,10 @@ The application will be accessible at `http://localhost:5173` (or the port indic
 - `npm run test`: Runs unit tests in watch mode (Vitest)
 - `npm run test:run`: Executes tests once (for CI/CD)
 - `npm run test:ui`: Visual interface for tests
+- `npm run test:e2e`: Runs Playwright E2E tests (Chromium)
+- `npm run test:e2e:headed`: E2E tests with visible browser
+- `npm run test:e2e:debug`: Interactive E2E test debugging
+- `npm run test:e2e:report`: Opens the latest Playwright HTML report
 - `npm run lint`: Checks code with ESLint
 - `npm run lint:fix`: Auto-fixes ESLint errors
 - `npm run lint:md`: Checks Markdown files
@@ -298,7 +472,7 @@ src/
 ├── core/                    # Core components
 │   ├── FPSCounter.ts       # Frames per second counter
 │   └── RenderPipeline.ts   # Rendering pipeline with error handling
-├── filters/                 # Video filters (17 filters)
+├── filters/                 # Video filters (21 filters)
 │   ├── Filter.ts           # Base interface + validation
 │   ├── NoneFilter.ts       # No filter
 │   ├── AsciiFilter.ts      # ASCII rendering with bitmap font
@@ -331,6 +505,18 @@ src/
 │   └── translations.ts     # FR/EN translations
 └── types/
     └── index.ts            # TypeScript definitions
+
+e2e/                         # Playwright E2E tests
+├── fixtures/
+│   └── base-fixture.ts     # Fixture with console interception + app readiness
+├── helpers/
+│   ├── filter-helpers.ts   # Filter selection, GPU, FPS, preset helpers
+│   └── memory-helpers.ts   # Heap metrics via CDP, forceGC
+├── filters-cpu.spec.ts     # 21 CPU filters + preset stacks
+├── filters-gpu.spec.ts     # 20 GPU filters + preset stacks
+├── webgl-errors.spec.ts    # Context loss + WebGL error monitoring
+├── memory.spec.ts          # Memory leak detection (CPU, GPU, sustained)
+└── fps.spec.ts             # FPS thresholds per filter + stack degradation
 ```
 
 ### 🎮 Usage
@@ -341,13 +527,39 @@ src/
    - Select a webcam from the list
    - Or load an image from your computer
 4. **Apply a filter** by selecting it from the dropdown menu
-5. **Video controls**:
+5. **Use V6 new features**:
+   - **Presets**: Select a preset (Cinematic, Cyberpunk, etc.) to load a pre-configured filter stack
+   - **Dynamic parameters**: Adjust contextual sliders to modify filter intensity in real-time
+   - **Advanced settings**: Click "Advanced Settings" to access all 39 parameters for all filters
+   - **Filter stack**: Add up to 5 filters simultaneously via "➕ Add Filter..." button
+6. **Video controls**:
    - Click on the canvas or press **Spacebar** to pause/resume
    - Click the 📥 button or press **S** to download the image
-6. **Adjust options**:
+7. **Adjust options**:
    - Show/hide FPS counter
    - Change aspect ratio (Auto, 16:9, 4:3, 1:1)
    - Switch between French and English
+
+**💡 Tip**: Your settings are automatically saved and restored on next startup!
+
+### 📋 Changelog
+
+#### Version 1.6.0 (January 2025) - V6 Dynamic Parameters & Advanced Features
+
+- ✨ **39 dynamic parameters** for 21 filters (real-time sliders)
+- 📚 **Filter stack**: Combine up to 5 filters simultaneously
+- 🎨 **5 presets**: Cinematic, Vintage Film, Cyberpunk, Surveillance, Dream Sequence
+- 💾 **LocalStorage persistence**: Automatic parameter saving
+- 🎛️ **Advanced interface**: Modal with accordion for all parameters
+- 🛡️ **Error recovery**: Automatic removal of crashed filters
+- 🌐 **Enhanced i18n**: 78+ new FR/EN translations
+
+#### Version 1.5.0 - Initial Release
+
+- 21 real-time video filters optimized with Canvas 2D
+- Webcam and static image support
+- Multilingual interface FR/EN
+- PNG download, pause/play, FPS counter
 
 ### 🔧 Technologies Used
 
@@ -363,7 +575,12 @@ src/
 
 #### Quality & Testing
 
-- **Vitest 2.1.9**: Unit testing framework with Happy-DOM
+- **Vitest 4.0.18**: Unit testing framework with Happy-DOM (502 tests)
+- **Playwright 1.58.2**: E2E tests on Chromium with simulated camera (95 tests)
+  - CPU/GPU filter smoke tests, stacking via presets
+  - WebGL context loss and automatic Canvas2D fallback
+  - Memory leak detection via CDP (heap metrics)
+  - FPS validation per filter (threshold ≥ 15 FPS on SwiftShader)
 - **ESLint 9.18.0**: Linting with typescript-eslint
 - **Prettier 3.2.0**: Automatic code formatting
 - **MarkdownLint**: Markdown file validation
@@ -381,7 +598,7 @@ This project was developed with artificial intelligence assistance:
 The AI generated:
 
 - Complete project architecture (strict TypeScript, zero-allocation patterns)
-- 17 real-time video filters with Canvas 2D optimizations
+- 21 real-time video filters with Canvas 2D optimizations
 - Unit tests (131 tests, 100% filter coverage)
 - CI/CD validation pipeline (type-check, lint, format, tests)
 - Technical and user-facing documentation

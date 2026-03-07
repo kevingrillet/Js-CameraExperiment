@@ -7,10 +7,11 @@ import { Filter, validateImageData } from "./Filter";
 
 export class AsciiFilter implements Filter {
   /**
-   * Size of each ASCII character cell in pixels (8x8)
-   * Creates 240x135 character grid at 1080p resolution
+   * Size of each ASCII character cell in pixels (4-16)
+   * Creates variable character grid based on cell size
+   * Default: 8 (240x135 character grid at 1080p resolution)
    */
-  private readonly CELL_SIZE = 8;
+  private characterSize = 8;
 
   /**
    * ASCII characters ordered by visual density (light to dark)
@@ -43,6 +44,15 @@ export class AsciiFilter implements Filter {
    */
   private glyphCanvases: Map<string, HTMLCanvasElement> = new Map();
 
+  /**
+   * Offscreen canvas and context for ASCII rendering
+   * Reused across frames to avoid per-frame allocation (GC pressure at 30+ FPS)
+   */
+  private offscreenCanvas: HTMLCanvasElement | null = null;
+  private offscreenCtx: CanvasRenderingContext2D | null = null;
+  private lastWidth = 0;
+  private lastHeight = 0;
+
   constructor() {
     this.initGlyphCanvases();
   }
@@ -55,8 +65,8 @@ export class AsciiFilter implements Filter {
   private initGlyphCanvases(): void {
     for (const char of this.CHARSET) {
       const canvas = document.createElement("canvas");
-      canvas.width = this.CELL_SIZE;
-      canvas.height = this.CELL_SIZE;
+      canvas.width = this.characterSize;
+      canvas.height = this.characterSize;
       const ctx = canvas.getContext("2d");
 
       // Happy-DOM may return null for getContext("2d")
@@ -74,8 +84,32 @@ export class AsciiFilter implements Filter {
   }
 
   /**
+   * Set filter parameters
+   * @param params - Partial parameters to update
+   */
+  setParameters(params: Record<string, number>): void {
+    if (params["characterSize"] !== undefined) {
+      this.characterSize = Math.max(
+        4,
+        Math.min(16, Math.floor(params["characterSize"]))
+      );
+      // Reinitialize glyphs with new size
+      this.glyphCanvases.clear();
+      this.initGlyphCanvases();
+    }
+  }
+
+  /**
+   * Get default parameter values
+   * @returns Default parameters object
+   */
+  getDefaultParameters(): Record<string, number> {
+    return { characterSize: 8 };
+  }
+
+  /**
    * Apply ASCII art effect to image data
-   * Divides image into 8x8 cells, maps luminance to charset
+   * Divides image into cells, maps luminance to charset
    * @param imageData - The input image data to transform
    * @returns The transformed ImageData with ASCII art effect
    */
@@ -86,37 +120,48 @@ export class AsciiFilter implements Filter {
     const width = imageData.width;
     const height = imageData.height;
 
-    // Get canvas context for drawing
-    const canvas = document.createElement("canvas");
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext("2d");
+    // Reuse offscreen canvas (avoid allocation in render loop)
+    if (
+      this.offscreenCanvas === null ||
+      this.offscreenCtx === null ||
+      this.lastWidth !== width ||
+      this.lastHeight !== height
+    ) {
+      this.offscreenCanvas = document.createElement("canvas");
+      this.offscreenCanvas.width = width;
+      this.offscreenCanvas.height = height;
+      this.offscreenCtx = this.offscreenCanvas.getContext("2d");
+      this.lastWidth = width;
+      this.lastHeight = height;
+    }
 
     // Happy-DOM may return null for getContext("2d") - fallback to passthrough
-    if (ctx === null) {
+    if (this.offscreenCtx === null) {
       return imageData;
     }
+
+    const ctx = this.offscreenCtx;
 
     // Fill background black
     ctx.fillStyle = this.BACKGROUND_COLOR;
     ctx.fillRect(0, 0, width, height);
 
     // Calculate grid dimensions
-    const cols = Math.floor(width / this.CELL_SIZE);
-    const rows = Math.floor(height / this.CELL_SIZE);
+    const cols = Math.floor(width / this.characterSize);
+    const rows = Math.floor(height / this.characterSize);
 
     // Process each cell
     for (let row = 0; row < rows; row++) {
       for (let col = 0; col < cols; col++) {
-        const cellX = col * this.CELL_SIZE;
-        const cellY = row * this.CELL_SIZE;
+        const cellX = col * this.characterSize;
+        const cellY = row * this.characterSize;
 
         // Calculate average luminance for this cell
         let totalLuminance = 0;
         let pixelCount = 0;
 
-        for (let y = 0; y < this.CELL_SIZE; y++) {
-          for (let x = 0; x < this.CELL_SIZE; x++) {
+        for (let y = 0; y < this.characterSize; y++) {
+          for (let x = 0; x < this.characterSize; x++) {
             const px = cellX + x;
             const py = cellY + y;
 
@@ -162,5 +207,9 @@ export class AsciiFilter implements Filter {
    */
   cleanup(): void {
     this.glyphCanvases.clear();
+    this.offscreenCanvas = null;
+    this.offscreenCtx = null;
+    this.lastWidth = 0;
+    this.lastHeight = 0;
   }
 }

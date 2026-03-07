@@ -5,6 +5,7 @@
     "esbenp.prettier-vscode",
     "github.vscode-github-actions",
     "GitHub.vscode-pull-request-github",
+    "ms-playwright.playwright",
     "shardulm94.trailing-spaces",
     "spywhere.guides"
   ]

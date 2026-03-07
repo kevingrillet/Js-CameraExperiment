@@ -8,18 +8,25 @@ import { Logger } from "../utils/Logger";
 
 export class KaleidoscopeFilter implements Filter {
   /**
-   * Number of symmetrical segments (6 = hexagonal pattern)
-   * Each segment = 60° (2π/6 radians)
-   * Justification: Standard kaleidoscope (vs 4=square, 8=octagonal)
+   * Number of symmetrical segments (3-12)
+   * Default: 6 = hexagonal pattern, each segment = 60° (2π/6 radians)
    * Hexagonal symmetry is natural and computationally efficient (360° divisor)
    */
-  private readonly SEGMENTS = 6;
+  private segments = 6;
 
   /**
    * Source image buffer (copy of original before transformation)
    * Reused across frames to avoid allocations in render loop
    */
   private sourceBuffer: Uint8ClampedArray | null = null;
+
+  /**
+   * V6 - Auto-rotation state
+   * Rotation offset added to theta before segment mapping
+   */
+  private rotationOffset = 0;
+  private autoRotateEnabled = false;
+  private rotationSpeed = 0.5; // degrees per frame (default 0.5°)
 
   /**
    * Apply kaleidoscope effect to image data
@@ -61,7 +68,17 @@ export class KaleidoscopeFilter implements Filter {
       const centerY = height / 2;
 
       // Segment angle in radians (60° = π/3)
-      const segmentAngle = (2 * Math.PI) / this.SEGMENTS;
+      const segmentAngle = (2 * Math.PI) / this.segments;
+
+      // V6 - Auto-rotation: increment rotation offset if enabled
+      if (this.autoRotateEnabled) {
+        const radiansPerFrame = (this.rotationSpeed * Math.PI) / 180;
+        this.rotationOffset += radiansPerFrame;
+        // Keep rotation in [0, 2π] range to avoid overflow
+        if (this.rotationOffset >= 2 * Math.PI) {
+          this.rotationOffset -= 2 * Math.PI;
+        }
+      }
 
       // Transform each destination pixel
       for (let y = 0; y < height; y++) {
@@ -79,6 +96,13 @@ export class KaleidoscopeFilter implements Filter {
           // Normalize angle to [0, 2π] range
           if (theta < 0) {
             theta += 2 * Math.PI;
+          }
+
+          // V6 - Apply rotation offset
+          theta += this.rotationOffset;
+          // Keep in [0, 2π] range
+          if (theta >= 2 * Math.PI) {
+            theta -= 2 * Math.PI;
           }
 
           // Map angle to first segment [0, segmentAngle]
@@ -146,6 +170,52 @@ export class KaleidoscopeFilter implements Filter {
   }
 
   /**
+   * Set filter parameters
+   * @param params - Partial parameters to update
+   */
+  setParameters(params: Record<string, number>): void {
+    if (params["segments"] !== undefined) {
+      this.segments = Math.max(3, Math.min(12, Math.floor(params["segments"])));
+    }
+    // V6 - Auto-rotation controls
+    // Support both individual parameters and unified autoRotate parameter
+    if (params["autoRotate"] !== undefined) {
+      // Unified parameter: 0 = disabled, >0 = enabled with that speed
+      if (params["autoRotate"] === 0) {
+        this.autoRotateEnabled = false;
+      } else {
+        this.autoRotateEnabled = true;
+        this.rotationSpeed = Math.max(0.1, Math.min(5.0, params["autoRotate"]));
+      }
+    }
+    if (params["autoRotateEnabled"] !== undefined) {
+      this.autoRotateEnabled = params["autoRotateEnabled"] === 1;
+    }
+    if (params["rotationSpeed"] !== undefined) {
+      this.rotationSpeed = Math.max(
+        0.1,
+        Math.min(5.0, params["rotationSpeed"])
+      );
+    }
+    if (params["rotation"] !== undefined) {
+      // Manual rotation angle override (when auto-rotate is disabled)
+      this.rotationOffset = (params["rotation"] * Math.PI) / 180; // degrees to radians
+    }
+  }
+
+  /**
+   * Get default parameter values
+   * @returns Default parameters object
+   */
+  getDefaultParameters(): Record<string, number> {
+    return {
+      segments: 6,
+      autoRotateEnabled: 0, // 0 = false, 1 = true (slider representation)
+      rotationSpeed: 0.5,
+    };
+  }
+
+  /**
    * Cleanup allocated buffers when filter is replaced
    */
   cleanup(): void {
@@ -157,5 +227,16 @@ export class KaleidoscopeFilter implements Filter {
         error instanceof Error ? error : undefined
       );
     }
+  }
+
+  /**
+   * Get current auto-rotate state (for localStorage persistence)
+   * @returns Auto-rotate state object
+   */
+  getAutoRotateState(): { enabled: boolean; speed: number } {
+    return {
+      enabled: this.autoRotateEnabled,
+      speed: this.rotationSpeed,
+    };
   }
 }

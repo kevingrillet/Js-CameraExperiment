@@ -1,3 +1,6 @@
 _bmad
 _bmad-output
 .github
+node_modules
+dist
+code-coverage-results.md

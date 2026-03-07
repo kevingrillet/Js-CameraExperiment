@@ -8,11 +8,11 @@ import { computeSobelGradients } from "../utils/SobelOperator";
 
 export class SobelRainbowFilter implements Filter {
   /**
-   * Edge detection magnitude threshold (0-255)
-   * 50 provides clean edge detection with minimal noise (same as EdgeDetectionFilter)
+   * Edge detection magnitude threshold (10-150)
+   * Default: 50 provides clean edge detection with minimal noise (same as EdgeDetectionFilter)
    * Edges below threshold are rendered as black background
    */
-  private readonly EDGE_THRESHOLD = 50;
+  private edgeSensitivity = 50;
 
   /**
    * Apply Sobel Rainbow effect to image data
@@ -44,7 +44,7 @@ export class SobelRainbowFilter implements Filter {
         // Guard against NaN/Infinity
         const safeMagnitude = isFinite(magnitude) ? magnitude : 0;
 
-        if (safeMagnitude > this.EDGE_THRESHOLD) {
+        if (safeMagnitude > this.edgeSensitivity) {
           // Edge detected - calculate angle and map to color
           const angle = Math.atan2(gyVal, gxVal);
           const safeAngle = isFinite(angle) ? angle : 0;
@@ -127,6 +127,27 @@ export class SobelRainbowFilter implements Filter {
       g: Math.round((g + m) * 255),
       b: Math.round((b + m) * 255),
     };
+  }
+
+  /**
+   * Set filter parameters
+   * @param params - Partial parameters to update
+   */
+  setParameters(params: Record<string, number>): void {
+    if (params["edgeSensitivity"] !== undefined) {
+      this.edgeSensitivity = Math.max(
+        10,
+        Math.min(150, params["edgeSensitivity"])
+      );
+    }
+  }
+
+  /**
+   * Get default parameter values
+   * @returns Default parameters object
+   */
+  getDefaultParameters(): Record<string, number> {
+    return { edgeSensitivity: 50 };
   }
 
   /**

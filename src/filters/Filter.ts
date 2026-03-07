@@ -15,6 +15,18 @@ export interface Filter {
    * Optional cleanup method called when filter is being replaced
    */
   cleanup?(): void;
+
+  /**
+   * V6 - Set filter parameters dynamically (optional, for parameterizable filters)
+   * @param params - Partial parameters object (only specified params will be updated)
+   */
+  setParameters?(params: Record<string, number>): void;
+
+  /**
+   * V6 - Get default parameter values (optional, for parameterizable filters)
+   * @returns Default parameters object
+   */
+  getDefaultParameters?(): Record<string, number>;
 }
 
 /**

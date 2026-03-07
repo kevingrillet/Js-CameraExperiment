@@ -16,17 +16,19 @@ import { Filter, validateImageData } from "./Filter";
 
 export class BlurFilter implements Filter {
   /**
-   * Blur kernel size (5×5 grid)
-   * Value of 5 provides visible blur while maintaining 30+ FPS on 1080p
+   * Blur kernel size (3-15, must be odd)
+   * Default: 5 provides visible blur while maintaining 30+ FPS on 1080p
    * Larger kernels create stronger blur but degrade performance exponentially
    */
-  private readonly KERNEL_SIZE = 5;
+  private kernelSize = 5;
 
   /**
    * Half of kernel size, used for offset calculations
-   * Radius of 2 means we sample 2 pixels in each direction (5 total: -2, -1, 0, +1, +2)
+   * Recalculated when kernelSize changes
    */
-  private readonly KERNEL_RADIUS = Math.floor(this.KERNEL_SIZE / 2);
+  private get kernelRadius(): number {
+    return Math.floor(this.kernelSize / 2);
+  }
 
   /**
    * Temporary buffer for horizontal blur pass result
@@ -61,8 +63,8 @@ export class BlurFilter implements Filter {
         let sumB = 0;
         let count = 0;
 
-        // Sample KERNEL_SIZE horizontal pixels centered on current pixel
-        for (let kx = -this.KERNEL_RADIUS; kx <= this.KERNEL_RADIUS; kx++) {
+        // Sample kernelSize horizontal pixels centered on current pixel
+        for (let kx = -this.kernelRadius; kx <= this.kernelRadius; kx++) {
           const sampleX = x + kx;
 
           // Clamp to image bounds (replicate edge pixels)
@@ -92,8 +94,8 @@ export class BlurFilter implements Filter {
         let sumB = 0;
         let count = 0;
 
-        // Sample KERNEL_SIZE vertical pixels centered on current pixel
-        for (let ky = -this.KERNEL_RADIUS; ky <= this.KERNEL_RADIUS; ky++) {
+        // Sample kernelSize vertical pixels centered on current pixel
+        for (let ky = -this.kernelRadius; ky <= this.kernelRadius; ky++) {
           const sampleY = y + ky;
 
           // Clamp to image bounds (replicate edge pixels)
@@ -116,6 +118,30 @@ export class BlurFilter implements Filter {
     }
 
     return imageData;
+  }
+
+  /**
+   * Set filter parameters
+   * @param params - Partial parameters to update
+   */
+  setParameters(params: Record<string, number>): void {
+    if (params["kernelSize"] !== undefined) {
+      // Ensure odd kernel size, clamp to valid range
+      let size = Math.max(3, Math.min(15, Math.floor(params["kernelSize"])));
+      if (size % 2 === 0) {
+        size++;
+      } // Make odd
+      this.kernelSize = size;
+      // Note: tempBuffer NOT invalidated (size-independent)
+    }
+  }
+
+  /**
+   * Get default parameter values
+   * @returns Default parameters object
+   */
+  getDefaultParameters(): Record<string, number> {
+    return { kernelSize: 5 };
   }
 
   /**

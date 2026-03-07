@@ -83,11 +83,11 @@ export class CanvasCapture {
     a.href = objectUrl;
     a.download = filename;
 
-    try {
-      a.click();
-    } finally {
-      // Always cleanup ObjectURL to prevent memory leaks
+    a.click();
+
+    // M6 FIX - Delay cleanup to allow download to start on slow devices
+    setTimeout(() => {
       URL.revokeObjectURL(objectUrl);
-    }
+    }, 1000);
   }
 }

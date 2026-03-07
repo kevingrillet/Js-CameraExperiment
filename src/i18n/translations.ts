@@ -11,6 +11,10 @@ export interface Translations {
   loadImage: string;
   filter: string;
   showFPS: string;
+  smoothTransitions: string;
+  useGPUAcceleration: string;
+  webglAvailable: string;
+  webglNotAvailable: string;
   aspectRatio: string;
   contain: string;
   cover: string;
@@ -24,6 +28,19 @@ export interface Translations {
   downloadImage: string;
   paused: string;
   clickToResume: string;
+  filterStack: string; // "Filter Stack"
+  addFilter: string; // "Add Filter..."
+  remove: string; // "Remove"
+  maxFiltersReached: string; // "Maximum 5 filters"
+  filterAlreadyInStack: string; // "{filter} already in stack"
+  presets: string; // "Presets"
+  presetNames: {
+    cinematic: string;
+    vintageFilm: string;
+    cyberpunk: string;
+    surveillance: string;
+    dreamSequence: string;
+  };
   filters: {
     none: string;
     ascii: string;
@@ -46,6 +63,44 @@ export interface Translations {
     thermal: string;
     vhs: string;
     vignette: string;
+  };
+  filterParameters: {
+    title: string; // "Filter Parameters"
+    advancedSettings: string; // "Advanced Settings"
+    resetFilter: string; // "Reset {filter}"
+    // Parameter names (generic, human-readable)
+    characterSize: string;
+    kernelSize: string;
+    blurStrength: string;
+    offset: string;
+    edgeSensitivity: string;
+    segments: string;
+    strength: string;
+    vignetteStrength: string;
+    focusRadius: string;
+    grainIntensity: string;
+    horizontalResolution: string;
+    verticalResolution: string;
+    scanlineDarkness: string;
+    scanlineSpacing: string;
+    bloomIntensity: string;
+    sensitivity: string;
+    noiseFilter: string;
+    trailDuration: string;
+    colorLevels: string;
+    brushSize: string;
+    edgePreservation: string;
+    edgeDarkness: string;
+    glitchFrequency: string;
+    trackingLinesFrequency: string;
+    lineShiftFrequency: string;
+    rgbGlitchFrequency: string;
+    rgbGlitchIntensity: string;
+    blockCorruptionFrequency: string;
+    glitchMinDuration: string;
+    glitchMaxDuration: string;
+    autoRotateEnabled: string;
+    rotationSpeed: string;
   };
   errors: {
     accessDenied: string;
@@ -77,6 +132,10 @@ export const translations: Record<Language, Translations> = {
     loadImage: "Charger une image",
     filter: "Filtre",
     showFPS: "Afficher FPS",
+    smoothTransitions: "Transitions fluides",
+    useGPUAcceleration: "Accélération GPU",
+    webglAvailable: "Accélération GPU disponible",
+    webglNotAvailable: "WebGL non disponible",
     aspectRatio: "Ratio d'aspect",
     contain: "Contain (bandes noires)",
     cover: "Cover (crop)",
@@ -90,6 +149,19 @@ export const translations: Record<Language, Translations> = {
     downloadImage: "Télécharger l'image",
     paused: "EN PAUSE",
     clickToResume: "Cliquez pour reprendre",
+    filterStack: "Pile de filtres",
+    addFilter: "➕ Ajouter un filtre...",
+    remove: "Retirer",
+    maxFiltersReached: "Maximum 5 filtres dans la pile",
+    filterAlreadyInStack: "{filter} est déjà dans la pile",
+    presets: "Préréglages",
+    presetNames: {
+      cinematic: "Cinématique",
+      vintageFilm: "Film Vintage",
+      cyberpunk: "Cyberpunk",
+      surveillance: "Surveillance",
+      dreamSequence: "Séquence de Rêve",
+    },
     filters: {
       none: "Aucun",
       ascii: "Art ASCII",
@@ -112,6 +184,43 @@ export const translations: Record<Language, Translations> = {
       thermal: "Thermique",
       vhs: "VHS Vintage",
       vignette: "Vignette artistique",
+    },
+    filterParameters: {
+      title: "Paramètres du filtre",
+      advancedSettings: "Paramètres avancés",
+      resetFilter: "Réinitialiser {filter}",
+      characterSize: "Taille des caractères (px)",
+      kernelSize: "Taille du noyau (px)",
+      blurStrength: "Intensité du flou (px)",
+      offset: "Décalage (px)",
+      edgeSensitivity: "Sensibilité des contours",
+      segments: "Nombre de segments",
+      autoRotateEnabled: "Rotation automatique",
+      rotationSpeed: "Vitesse de rotation (°/frame)",
+      strength: "Force",
+      vignetteStrength: "Force de la vignette",
+      focusRadius: "Rayon de mise au point",
+      grainIntensity: "Intensité du grain",
+      horizontalResolution: "Résolution horizontale (px)",
+      verticalResolution: "Résolution verticale (px)",
+      scanlineDarkness: "Assombrissement des lignes de balayage",
+      scanlineSpacing: "Espacement des lignes (px)",
+      bloomIntensity: "Intensité du bloom",
+      sensitivity: "Sensibilité",
+      noiseFilter: "Filtre de bruit",
+      trailDuration: "Durée de traînée",
+      colorLevels: "Niveaux de couleur",
+      brushSize: "Taille du pinceau (px)",
+      edgePreservation: "Préservation des contours",
+      edgeDarkness: "Noirceur des contours",
+      glitchFrequency: "Fréquence de glitch",
+      trackingLinesFrequency: "Fréquence des lignes de tracking",
+      lineShiftFrequency: "Fréquence de décalage de ligne",
+      rgbGlitchFrequency: "Fréquence de glitch RVB",
+      rgbGlitchIntensity: "Intensité de glitch RVB (px)",
+      blockCorruptionFrequency: "Fréquence de corruption de blocs",
+      glitchMinDuration: "Durée minimale de glitch (frames)",
+      glitchMaxDuration: "Durée maximale de glitch (frames)",
     },
     errors: {
       accessDenied:
@@ -146,6 +255,10 @@ export const translations: Record<Language, Translations> = {
     loadImage: "Load Image",
     filter: "Filter",
     showFPS: "Show FPS",
+    smoothTransitions: "Smooth Transitions",
+    useGPUAcceleration: "Use GPU Acceleration",
+    webglAvailable: "GPU acceleration available",
+    webglNotAvailable: "WebGL not available",
     aspectRatio: "Aspect Ratio",
     contain: "Contain (letterbox)",
     cover: "Cover (crop)",
@@ -159,6 +272,19 @@ export const translations: Record<Language, Translations> = {
     downloadImage: "Download Image",
     paused: "PAUSED",
     clickToResume: "Click to resume",
+    filterStack: "Filter Stack",
+    addFilter: "➕ Add Filter...",
+    remove: "Remove",
+    maxFiltersReached: "Maximum 5 filters in stack",
+    filterAlreadyInStack: "{filter} is already in the stack",
+    presets: "Presets",
+    presetNames: {
+      cinematic: "Cinematic",
+      vintageFilm: "Vintage Film",
+      cyberpunk: "Cyberpunk",
+      surveillance: "Surveillance",
+      dreamSequence: "Dream Sequence",
+    },
     filters: {
       none: "None",
       ascii: "ASCII Art",
@@ -181,6 +307,43 @@ export const translations: Record<Language, Translations> = {
       thermal: "Thermal",
       vhs: "VHS Vintage",
       vignette: "Artistic Vignette",
+    },
+    filterParameters: {
+      title: "Filter Parameters",
+      advancedSettings: "Advanced Settings",
+      resetFilter: "Reset {filter}",
+      characterSize: "Character Size (px)",
+      kernelSize: "Kernel Size (px)",
+      blurStrength: "Blur Strength (px)",
+      offset: "Offset (px)",
+      edgeSensitivity: "Edge Sensitivity",
+      segments: "Number of Segments",
+      autoRotateEnabled: "Auto Rotate",
+      rotationSpeed: "Rotation Speed (°/frame)",
+      strength: "Strength",
+      vignetteStrength: "Vignette Strength",
+      focusRadius: "Focus Radius",
+      grainIntensity: "Grain Intensity",
+      horizontalResolution: "Horizontal Resolution (px)",
+      verticalResolution: "Vertical Resolution (px)",
+      scanlineDarkness: "Scanline Darkness",
+      scanlineSpacing: "Scanline Spacing (px)",
+      bloomIntensity: "Bloom Intensity",
+      sensitivity: "Sensitivity",
+      noiseFilter: "Noise Filter",
+      trailDuration: "Trail Duration",
+      colorLevels: "Color Levels",
+      brushSize: "Brush Size (px)",
+      edgePreservation: "Edge Preservation",
+      edgeDarkness: "Edge Darkness",
+      glitchFrequency: "Glitch Frequency",
+      trackingLinesFrequency: "Tracking Lines Frequency",
+      lineShiftFrequency: "Line Shift Frequency",
+      rgbGlitchFrequency: "RGB Glitch Frequency",
+      rgbGlitchIntensity: "RGB Glitch Intensity (px)",
+      blockCorruptionFrequency: "Block Corruption Frequency",
+      glitchMinDuration: "Glitch Min Duration (frames)",
+      glitchMaxDuration: "Glitch Max Duration (frames)",
     },
     errors: {
       accessDenied:
