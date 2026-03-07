@@ -45,6 +45,7 @@ export interface Translations {
     none: string;
     ascii: string;
     blur: string;
+    bw: string;
     chromatic: string;
     comicbook: string;
     crt: string;
@@ -101,6 +102,9 @@ export interface Translations {
     glitchMaxDuration: string;
     autoRotateEnabled: string;
     rotationSpeed: string;
+    threshold: string;
+    thresholdMode: string;
+    ditheringMode: string;
   };
   errors: {
     accessDenied: string;
@@ -166,6 +170,7 @@ export const translations: Record<Language, Translations> = {
       none: "Aucun",
       ascii: "Art ASCII",
       blur: "Flou",
+      bw: "Noir & Blanc pur",
       chromatic: "Aberration chromatique",
       comicbook: "Comic Book / Halftone",
       crt: "CRT",
@@ -221,6 +226,9 @@ export const translations: Record<Language, Translations> = {
       blockCorruptionFrequency: "Fréquence de corruption de blocs",
       glitchMinDuration: "Durée minimale de glitch (frames)",
       glitchMaxDuration: "Durée maximale de glitch (frames)",
+      threshold: "Seuil de luminance",
+      thresholdMode: "Mode de seuil",
+      ditheringMode: "Mode de tramage",
     },
     errors: {
       accessDenied:
@@ -289,6 +297,7 @@ export const translations: Record<Language, Translations> = {
       none: "None",
       ascii: "ASCII Art",
       blur: "Blur",
+      bw: "Pure Black & White",
       chromatic: "Chromatic Aberration",
       comicbook: "Comic Book / Halftone",
       crt: "CRT",
@@ -344,6 +353,9 @@ export const translations: Record<Language, Translations> = {
       blockCorruptionFrequency: "Block Corruption Frequency",
       glitchMinDuration: "Glitch Min Duration (frames)",
       glitchMaxDuration: "Glitch Max Duration (frames)",
+      threshold: "Luminance Threshold",
+      thresholdMode: "Threshold Mode",
+      ditheringMode: "Dithering Mode",
     },
     errors: {
       accessDenied:

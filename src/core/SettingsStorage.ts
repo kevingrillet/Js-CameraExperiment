@@ -10,6 +10,7 @@ export class SettingsStorage {
   private static readonly STORAGE_KEY = "cameraExperimentSettings_v6";
   private static saveTimeout: number | null = null;
   private static readonly DEBOUNCE_MS = 500;
+  private static beforeUnloadRegistered: boolean = false;
 
   /**
    * Save settings to localStorage with debouncing
@@ -115,6 +116,10 @@ export class SettingsStorage {
   static initializeBeforeUnloadHandler(
     getCurrentSettings: () => StoredSettings
   ): void {
+    if (this.beforeUnloadRegistered) {
+      return; // Prevent duplicate listener registration
+    }
+    this.beforeUnloadRegistered = true;
     window.addEventListener("beforeunload", () => {
       const settings = getCurrentSettings();
       this.flush(settings);

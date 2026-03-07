@@ -15,10 +15,11 @@ Application web interactive permettant d'appliquer des filtres vidéo en temps r
 ### ✨ Fonctionnalités
 
 - **Sources multiples** : Webcam en direct ou images statiques
-- **21 filtres disponibles** :
+- **22 filtres disponibles** :
   - 🔄 **None** : Flux vidéo original sans traitement
   - 🖥️ **ASCII Art** : Conversion vidéo en art ASCII style Matrix (cellules 8×8 pixels, bitmap font pré-rendu, 9 niveaux de densité `.:-=+*#%@`, 40+ FPS grâce à la pré-génération des glyphes)
   - 🌫️ **Blur** : Flou doux (box blur séparable 5×5, 30-45 FPS)
+  - ⬛ **Noir & Blanc pur** : Binarisation par luminance avec modes tramage Bayer (2×2, 4×4, 8×8, 16×16) et bruit bleu 64×64, 100+ FPS
   - 🌈 **Chromatic Aberration** : Décalage RVB pour effet glitch/vintage
   - 📰 **Comic Book / Halftone** : Style bande dessinée avec posterisation et contours épais
   - 📷 **CRT** : Simulation d'écran cathodique vintage avec scanlines
@@ -37,7 +38,7 @@ Application web interactive permettant d'appliquer des filtres vidéo en temps r
   - 🌡️ **Thermal** : Imagerie thermique infrarouge (LUT 256 couleurs)
   - 📼 **VHS** : Effet VHS vintage avec glitches et tracking lines
   - 🎭 **Vignette artistique** : Assombrissement radial pour effet spotlight
-- **🎛️ Paramètres dynamiques (V6)** : Contrôle en temps réel de 39 paramètres via sliders contextuels
+- **🎛️ Paramètres dynamiques (V6-V7)** : Contrôle en temps réel de 42 paramètres via sliders contextuels
   - Taille des caractères ASCII, intensité du flou, offset chromatique, sensibilité de détection de contours
   - Segments du kaléidoscope, intensité du grain nocturne, niveaux de couleur de la rotoscopie
   - Paramètres avancés des filtres complexes (CRT, Glitch, VHS, OilPainting, DepthOfField)
@@ -81,9 +82,9 @@ Application web interactive permettant d'appliquer des filtres vidéo en temps r
 
 **Performance attendue (pile de 5 filtres lourds)** : 15+ FPS @ 720p, 8-12 FPS @ 1080p (Canvas 2D seulement)
 
-### ⚡ Accélération WebGL (V6 - Bêta)
+### ⚡ Accélération WebGL (V7)
 
-**État actuel** : Fonctionnalité expérimentale, **désactivée par défaut** pour maximiser la compatibilité.
+**État actuel** : Fonctionnalité stable, **désactivée par défaut**. Activez-la dans les Paramètres pour bénéficier de l'accélération GPU sur 21 filtres.
 
 #### Prérequis
 
@@ -92,20 +93,18 @@ Application web interactive permettant d'appliquer des filtres vidéo en temps r
 
 #### Filtres accélérés
 
-Actuellement, seul le filtre **Blur** bénéficie de l'accélération GPU :
+**21 filtres** disposent d'une implémentation GPU (tous sauf "None") :
 
-- ✅ **BlurFilter** : Shader Gaussien séparable (2 passes)
-- ⏳ **DepthOfFieldFilter** : Planifié pour V7
-- ⏳ **OilPaintingFilter** : Planifié pour V7
+ASCII Art, Noir & Blanc pur (V7), Blur, Aberration chromatique, Comic Book, CRT, Profondeur de champ, Détection de contours, Glitch, Invert, Kaléidoscope, Détection de mouvement, Night Vision, Peinture à l'huile, Pixelate, Rotoscope, Sepia, Sobel Rainbow, Thermal, VHS, Vignette
 
 #### Performance
 
-**Amélioration mesurée (Blur @ 1080p)** :
+**Amélioration générale (filtre unique @ 1080p)** :
 
-| Mode      | FPS       | Speedup  |
-| --------- | --------- | -------- |
-| Canvas 2D | 30-45 FPS | Baseline |
-| WebGL     | 60+ FPS   | ~1.5-2x  |
+| Mode      | FPS typiques | Gain typique |
+| --------- | ------------ | ------------ |
+| Canvas 2D | 20-60 FPS    | Baseline     |
+| WebGL     | 40-120 FPS   | ~1.5-3x      |
 
 #### Activation
 
@@ -125,7 +124,6 @@ L'application bascule automatiquement sur Canvas 2D si :
 
 #### Limitations connues
 
-- 🚧 Seul Blur est accéléré en V6 (autres filtres restent en Canvas 2D même avec WebGL activé)
 - 🐛 Safari : Performances légèrement réduites vs Chrome/Firefox
 - 📱 Mobile : Non testé, utilisation déconseillée
 
@@ -187,35 +185,49 @@ src/
 ├── main.ts                  # Point d'entrée principal
 ├── core/                    # Composants principaux
 │   ├── FPSCounter.ts       # Compteur de frames par seconde
-│   └── RenderPipeline.ts   # Pipeline de rendu avec error handling
-├── filters/                 # Filtres vidéo (21 filtres)
+│   ├── RenderPipeline.ts   # Pipeline de rendu avec error handling
+│   └── SettingsStorage.ts  # Persistance LocalStorage (V6)
+├── filters/                 # Filtres vidéo (22 filtres)
 │   ├── Filter.ts           # Interface de base + validation
 │   ├── NoneFilter.ts       # Pas de filtre
 │   ├── AsciiFilter.ts      # Rendu ASCII avec bitmap font
+│   ├── BlackWhiteFilter.ts # Noir & Blanc pur avec tramage Bayer et bruit bleu (V7)
 │   ├── BlurFilter.ts       # Flou doux séparable (V3)
 │   ├── ChromaticAberrationFilter.ts  # Aberration chromatique (V3)
-│   ├── InvertFilter.ts     # Inversion des couleurs
+│   ├── ComicBookFilter.ts  # Bande dessinée avec posterisation
+│   ├── CRTFilter.ts        # Effet CRT avec scanlines
+│   ├── DepthOfFieldFilter.ts     # Profondeur de champ (V6)
+│   ├── EdgeDetectionFilter.ts    # Détection de contours Sobel
 │   ├── GlitchFilter.ts     # Glitch/Datamosh avec artefacts temporels
+│   ├── InvertFilter.ts     # Inversion des couleurs
+│   ├── KaleidoscopeFilter.ts     # Symétrie radiale kaléidoscope
 │   ├── MotionDetectionFilter.ts  # Détection de mouvement
+│   ├── NightVisionFilter.ts      # Vision nocturne
 │   ├── OilPaintingFilter.ts      # Peinture à l'huile avec bilateral blur
 │   ├── PixelateFilter.ts   # Pixellisation Game Boy
-│   ├── CRTFilter.ts        # Effet CRT avec scanlines
 │   ├── RotoscopeFilter.ts  # Rotoscopie cartoon
-│   ├── EdgeDetectionFilter.ts    # Détection de contours Sobel
-│   ├── NightVisionFilter.ts      # Vision nocturne
 │   ├── SepiaFilter.ts      # Tons sépia vintage (V3)
 │   ├── SobelRainbowFilter.ts     # Sobel avec mapping HSL
 │   ├── ThermalFilter.ts    # Imagerie thermique (V3)
 │   ├── VHSFilter.ts        # Effet VHS vintage
-│   └── __tests__/          # Tests unitaires (131 tests, 20 fichiers)
+│   ├── VignetteFilter.ts   # Vignette artistique
+│   ├── webgl/              # Implémentations WebGL GPU (21 filtres)
+│   └── __tests__/          # Tests unitaires (158 tests, 21 fichiers)
+├── presets/
+│   └── PresetDefinitions.ts # 5 préréglages (Cinematic, Vintage, etc.)
 ├── ui/
-│   └── SettingsOverlay.ts  # Interface de paramètres
+│   ├── SettingsOverlay.ts  # Interface de paramètres
+│   ├── AdvancedSettingsModal.ts  # Modal paramètres avancés
+│   ├── FilterStackUI.ts    # UI pile de filtres (drag & drop)
+│   └── GitHubCorner.ts     # Lien GitHub animé
 ├── video/
 │   └── VideoSource.ts      # Gestion des sources vidéo
 ├── utils/
+│   ├── BrowserCompatibility.ts  # Détection fonctionnalités navigateur
 │   ├── CanvasCapture.ts    # Capture et téléchargement d'images
 │   ├── Logger.ts           # Logging centralisé (dev-only)
 │   ├── SobelOperator.ts    # Utility Sobel partagé (extraction V4)
+│   ├── Toast.ts            # Notifications toast (max 3, FIFO)
 │   └── __tests__/          # Tests unitaires des utilitaires
 ├── i18n/
 │   └── translations.ts     # Traductions FR/EN
@@ -228,8 +240,8 @@ e2e/                         # Tests E2E Playwright
 ├── helpers/
 │   ├── filter-helpers.ts   # Sélection filtres, GPU, FPS, presets
 │   └── memory-helpers.ts   # Métriques heap via CDP, forceGC
-├── filters-cpu.spec.ts     # 21 filtres CPU + stacks via presets
-├── filters-gpu.spec.ts     # 20 filtres GPU + stacks via presets
+├── filters-cpu.spec.ts     # 22 filtres CPU + stacks via presets
+├── filters-gpu.spec.ts     # 21 filtres GPU + stacks via presets
 ├── webgl-errors.spec.ts    # Context loss + monitoring erreurs WebGL
 ├── memory.spec.ts          # Détection fuites mémoire (CPU, GPU, soutenu)
 └── fps.spec.ts             # Seuils FPS par filtre + dégradation stack
@@ -246,7 +258,7 @@ e2e/                         # Tests E2E Playwright
 5. **Utiliser les nouvelles fonctionnalités V6** :
    - **Préréglages** : Sélectionnez un preset (Cinematic, Cyberpunk, etc.) pour charger une pile de filtres pré-configurée
    - **Paramètres dynamiques** : Ajustez les sliders contextuels pour modifier l'intensité des filtres en temps réel
-   - **Paramètres avancés** : Cliquez sur "Paramètres avancés" pour accéder aux 39 paramètres de tous les filtres
+   - **Paramètres avancés** : Cliquez sur "Paramètres avancés" pour accéder aux 42 paramètres de tous les filtres
    - **Pile de filtres** : Ajoutez jusqu'à 5 filtres simultanément via le bouton "➕ Ajouter un filtre..."
 6. **Contrôles vidéo** :
    - Cliquer sur le canvas ou presser **Espace** pour mettre en pause/reprendre
@@ -259,6 +271,15 @@ e2e/                         # Tests E2E Playwright
 **💡 Astuce** : Vos paramètres sont automatiquement sauvegardés et restaurés au prochain démarrage !
 
 ### 📋 Changelog
+
+#### Version 1.7.0 (Mars 2026) - V7 Pure Black & White & WebGL Stable
+
+- ⬛ **Filtre Noir & Blanc pur** : 22e filtre vidéo avec binarisation par luminance
+  - Tramage Bayer ordonné (matrices 2×2, 4×4, 8×8, 16×16) et bruit bleu 64×64
+  - 3 modes de seuil (fixe, aléatoire, bruit bleu), 5 modes de tramage
+  - Implémentation CPU (100+ FPS) et WebGL GPU (shader GLSL ES 3.00)
+- ⚡ **Accélération WebGL stable** : 21 filtres GPU-accélérés (tous sauf None)
+- 🎛️ **42 paramètres** : +3 pour le Noir & Blanc pur (seuil, mode seuil, mode tramage)
 
 #### Version 1.6.0 (Janvier 2025) - V6 Dynamic Parameters & Advanced Features
 
@@ -281,7 +302,7 @@ e2e/                         # Tests E2E Playwright
 
 #### Core
 
-- **TypeScript 5.3.3** : Langage de programmation typé (strict mode)
+- **TypeScript 5.9.3** : Langage de programmation typé (strict mode)
 - **Vite 7.3.1** : Build tool et serveur de développement ultra-rapide
 - **Canvas 2D API** : Manipulation d'images en temps réel
 - **MediaStream API** (`navigator.mediaDevices.getUserMedia()`) : Accès à la webcam
@@ -291,14 +312,14 @@ e2e/                         # Tests E2E Playwright
 
 #### Qualité & Tests
 
-- **Vitest 4.0.18** : Framework de tests unitaires avec Happy-DOM (502 tests)
-- **Playwright 1.58.2** : Tests E2E sur Chromium avec caméra simulée (95 tests)
+- **Vitest 4.0.18** : Framework de tests unitaires avec Happy-DOM (536 tests)
+- **Playwright 1.58.2** : Tests E2E sur Chromium avec caméra simulée (101 tests)
   - Filtres CPU/GPU smoke tests, stacks via presets
   - WebGL context loss et fallback Canvas2D automatique
   - Détection de fuites mémoire via CDP (heap metrics)
   - Validation FPS par filtre (seuil ≥ 15 FPS en SwiftShader)
-- **ESLint 9.18.0** : Linting avec typescript-eslint
-- **Prettier 3.2.0** : Formatage automatique du code
+- **ESLint 10.0.3** : Linting avec typescript-eslint
+- **Prettier 3.8.1** : Formatage automatique du code
 - **MarkdownLint** : Validation des fichiers Markdown
 - **Husky + lint-staged** : Git hooks pour validation pre-commit
 - **GitHub Actions** : CI/CD avec pipeline de validation automatique
@@ -307,7 +328,7 @@ e2e/                         # Tests E2E Playwright
 
 Ce projet a été développé avec l'assistance de l'intelligence artificielle :
 
-- **Modèle d'IA** : Claude Sonnet 4.5 (Anthropic)
+- **Modèle d'IA** : Claude Sonnet 4.6 (Anthropic)
 - **Méthodologie** : [BMAD-method](https://github.com/bmad-code-org/BMAD-METHOD) v6.0.0-alpha.23
 - **Agent** : Quick Flow Solo Dev (Barry) - Développement autonome end-to-end
 
@@ -315,11 +336,11 @@ L'IA a généré :
 
 - Architecture complète du projet (TypeScript strict, zero-allocation patterns)
 - 21 filtres vidéo temps réel avec optimisations Canvas 2D
-- Tests unitaires (131 tests, couverture 100% des filtres)
+- Tests unitaires (536 tests, couverture des filtres)
 - Pipeline de validation CI/CD (type-check, lint, format, tests)
 - Documentation technique et user-facing
 
-Le code respecte des standards stricts : TypeScript 5.3 strict mode, ESLint zero warnings, Prettier formatting, et performance 30-120 FPS sur flux 1080p.
+Le code respecte des standards stricts : TypeScript 5.9 strict mode, ESLint zero warnings, Prettier formatting, et performance 30-120 FPS sur flux 1080p.
 
 ### 📄 Licence
 
@@ -348,10 +369,11 @@ Interactive web application for applying real-time video filters to webcam strea
 ### ✨ Features
 
 - **Multiple sources**: Live webcam or static images
-- **21 available filters**:
+- **22 available filters**:
   - 🔄 **None**: Original video stream without processing
   - 🖥️ **ASCII Art**: 8×8 ASCII rendering with pre-rendered bitmap font (40+ FPS)
   - 🌫️ **Blur**: Soft focus (5×5 separable box blur, 30-45 FPS)
+  - ⬛ **Pure Black & White**: Luminance binarization with Bayer ordered dithering (2×2 to 16×16) and 64×64 blue-noise, 100+ FPS
   - 🌈 **Chromatic Aberration**: RGB channel shift for glitch/vintage effect
   - 📰 **Comic Book / Halftone**: Comic book style with posterization and thick outlines
   - 📺 **CRT**: Vintage cathode ray tube with scanlines
@@ -370,7 +392,7 @@ Interactive web application for applying real-time video filters to webcam strea
   - 🌡️ **Thermal**: Infrared thermal imaging (256-color LUT)
   - 📼 **VHS**: Vintage VHS with glitches and tracking lines
   - 🎭 **Artistic Vignette**: Radial darkening for spotlight effect
-- **🎛️ Dynamic Parameters (V6)**: Real-time control of 39 parameters via contextual sliders
+- **🎛️ Dynamic Parameters (V6-V7)**: Real-time control of 42 parameters via contextual sliders
   - ASCII character size, blur intensity, chromatic offset, edge detection sensitivity
   - Kaleidoscope segments, night vision grain intensity, rotoscope color levels
   - Advanced parameters for complex filters (CRT, Glitch, VHS, OilPainting, DepthOfField)
@@ -413,6 +435,51 @@ Interactive web application for applying real-time video filters to webcam strea
 - HTTP: Limited webcam access (HTTPS required or localhost)
 
 **Expected Performance (stack of 5 heavy filters)**: 15+ FPS @ 720p, 8-12 FPS @ 1080p (Canvas 2D only)
+
+### ⚡ WebGL Acceleration (V7)
+
+**Current state**: Stable feature, **disabled by default**. Enable it in Settings to benefit from GPU acceleration on 21 filters.
+
+#### Prerequisites
+
+- **WebGL 2.0** or **WebGL 1.0** with `OES_texture_float` extension
+- Supported browsers: Chrome 90+, Firefox 88+, Safari 14+, Edge 90+
+
+#### Accelerated filters
+
+**21 filters** have a GPU implementation (all except "None"):
+
+ASCII Art, Pure Black & White (V7), Blur, Chromatic Aberration, Comic Book, CRT, Depth of Field, Edge Detection, Glitch, Invert, Kaleidoscope, Motion Detection, Night Vision, Oil Painting, Pixelate, Rotoscope, Sepia, Sobel Rainbow, Thermal, VHS, Vignette
+
+#### Performance
+
+**General improvement (single filter @ 1080p)**:
+
+| Mode      | Typical FPS | Typical gain |
+| --------- | ----------- | ------------ |
+| Canvas 2D | 20-60 FPS   | Baseline     |
+| WebGL     | 40-120 FPS  | ~1.5-3x      |
+
+#### Enabling
+
+1. Open **Settings** (⚙️)
+2. Check **"Use GPU acceleration (WebGL)"**
+3. If WebGL is unavailable, the checkbox will be disabled with a warning
+
+#### Automatic fallback
+
+The application automatically falls back to Canvas 2D if:
+
+- WebGL is not supported by the browser
+- The WebGL context is lost (GPU crash, driver issue)
+- A shader compilation error occurs
+
+**User message**: "GPU acceleration disabled due to an error. Switching to CPU rendering."
+
+#### Known limitations
+
+- 🐛 Safari: Slightly reduced performance vs Chrome/Firefox
+- 📱 Mobile: Untested, not recommended
 
 ### 🚀 Installation
 
@@ -471,35 +538,49 @@ src/
 ├── main.ts                  # Main entry point
 ├── core/                    # Core components
 │   ├── FPSCounter.ts       # Frames per second counter
-│   └── RenderPipeline.ts   # Rendering pipeline with error handling
-├── filters/                 # Video filters (21 filters)
+│   ├── RenderPipeline.ts   # Rendering pipeline with error handling
+│   └── SettingsStorage.ts  # LocalStorage persistence (V6)
+├── filters/                 # Video filters (22 filters)
 │   ├── Filter.ts           # Base interface + validation
 │   ├── NoneFilter.ts       # No filter
 │   ├── AsciiFilter.ts      # ASCII rendering with bitmap font
+│   ├── BlackWhiteFilter.ts # Pure Black & White with Bayer dithering and blue-noise (V7)
 │   ├── BlurFilter.ts       # Soft focus separable blur (V3)
 │   ├── ChromaticAberrationFilter.ts  # Chromatic aberration (V3)
-│   ├── InvertFilter.ts     # Color inversion
+│   ├── ComicBookFilter.ts  # Comic book with posterization
+│   ├── CRTFilter.ts        # CRT effect with scanlines
+│   ├── DepthOfFieldFilter.ts     # Depth of field (V6)
+│   ├── EdgeDetectionFilter.ts    # Sobel edge detection
 │   ├── GlitchFilter.ts     # Glitch/Datamosh with temporal artifacts
+│   ├── InvertFilter.ts     # Color inversion
+│   ├── KaleidoscopeFilter.ts     # Radial kaleidoscope symmetry
 │   ├── MotionDetectionFilter.ts  # Motion detection
+│   ├── NightVisionFilter.ts      # Night vision
 │   ├── OilPaintingFilter.ts      # Oil painting with bilateral blur
 │   ├── PixelateFilter.ts   # Game Boy pixelation
-│   ├── CRTFilter.ts        # CRT effect with scanlines
 │   ├── RotoscopeFilter.ts  # Cartoon rotoscoping
-│   ├── EdgeDetectionFilter.ts    # Sobel edge detection
-│   ├── NightVisionFilter.ts      # Night vision
 │   ├── SepiaFilter.ts      # Vintage sepia tone (V3)
 │   ├── SobelRainbowFilter.ts     # Sobel with HSL mapping
 │   ├── ThermalFilter.ts    # Thermal imaging (V3)
 │   ├── VHSFilter.ts        # Vintage VHS effect
-│   └── __tests__/          # Unit tests (131 tests, 20 files)
+│   ├── VignetteFilter.ts   # Artistic vignette
+│   ├── webgl/              # WebGL GPU implementations (21 filters)
+│   └── __tests__/          # Unit tests (158 tests, 21 files)
+├── presets/
+│   └── PresetDefinitions.ts # 5 presets (Cinematic, Vintage, etc.)
 ├── ui/
-│   └── SettingsOverlay.ts  # Settings interface
+│   ├── SettingsOverlay.ts  # Settings interface
+│   ├── AdvancedSettingsModal.ts  # Advanced parameters modal
+│   ├── FilterStackUI.ts    # Filter stack UI (drag & drop)
+│   └── GitHubCorner.ts     # Animated GitHub link
 ├── video/
 │   └── VideoSource.ts      # Video source management
 ├── utils/
+│   ├── BrowserCompatibility.ts  # Browser feature detection
 │   ├── CanvasCapture.ts    # Canvas capture and download
 │   ├── Logger.ts           # Centralized logging (dev-only)
 │   ├── SobelOperator.ts    # Shared Sobel utility (V4 extraction)
+│   ├── Toast.ts            # Toast notifications (max 3, FIFO)
 │   └── __tests__/          # Unit tests for utilities
 ├── i18n/
 │   └── translations.ts     # FR/EN translations
@@ -512,8 +593,8 @@ e2e/                         # Playwright E2E tests
 ├── helpers/
 │   ├── filter-helpers.ts   # Filter selection, GPU, FPS, preset helpers
 │   └── memory-helpers.ts   # Heap metrics via CDP, forceGC
-├── filters-cpu.spec.ts     # 21 CPU filters + preset stacks
-├── filters-gpu.spec.ts     # 20 GPU filters + preset stacks
+├── filters-cpu.spec.ts     # 22 CPU filters + preset stacks
+├── filters-gpu.spec.ts     # 21 GPU filters + preset stacks
 ├── webgl-errors.spec.ts    # Context loss + WebGL error monitoring
 ├── memory.spec.ts          # Memory leak detection (CPU, GPU, sustained)
 └── fps.spec.ts             # FPS thresholds per filter + stack degradation
@@ -530,7 +611,7 @@ e2e/                         # Playwright E2E tests
 5. **Use V6 new features**:
    - **Presets**: Select a preset (Cinematic, Cyberpunk, etc.) to load a pre-configured filter stack
    - **Dynamic parameters**: Adjust contextual sliders to modify filter intensity in real-time
-   - **Advanced settings**: Click "Advanced Settings" to access all 39 parameters for all filters
+   - **Advanced settings**: Click "Advanced Settings" to access all 42 parameters for all filters
    - **Filter stack**: Add up to 5 filters simultaneously via "➕ Add Filter..." button
 6. **Video controls**:
    - Click on the canvas or press **Spacebar** to pause/resume
@@ -543,6 +624,15 @@ e2e/                         # Playwright E2E tests
 **💡 Tip**: Your settings are automatically saved and restored on next startup!
 
 ### 📋 Changelog
+
+#### Version 1.7.0 (March 2026) - V7 Pure Black & White & Stable WebGL
+
+- ⬛ **Pure Black & White filter**: 22nd video filter with luminance binarization
+  - Bayer ordered dithering (2×2, 4×4, 8×8, 16×16 matrices) and 64×64 blue-noise
+  - 3 threshold modes (fixed, random, blue-noise), 5 dithering modes
+  - CPU implementation (100+ FPS) and WebGL GPU (GLSL ES 3.00 shader)
+- ⚡ **Stable WebGL**: GPU acceleration for all 21 compatible filters (all except None)
+- 🎛️ **42 parameters**: +3 for Pure Black & White (threshold, threshold mode, dithering mode)
 
 #### Version 1.6.0 (January 2025) - V6 Dynamic Parameters & Advanced Features
 
@@ -565,7 +655,7 @@ e2e/                         # Playwright E2E tests
 
 #### Core
 
-- **TypeScript 5.3.3**: Typed programming language (strict mode)
+- **TypeScript 5.9.3**: Typed programming language (strict mode)
 - **Vite 7.3.1**: Ultra-fast build tool and development server
 - **Canvas 2D API**: Real-time image manipulation
 - **MediaStream API** (`navigator.mediaDevices.getUserMedia()`): Webcam access
@@ -575,14 +665,14 @@ e2e/                         # Playwright E2E tests
 
 #### Quality & Testing
 
-- **Vitest 4.0.18**: Unit testing framework with Happy-DOM (502 tests)
-- **Playwright 1.58.2**: E2E tests on Chromium with simulated camera (95 tests)
+- **Vitest 4.0.18**: Unit testing framework with Happy-DOM (536 tests)
+- **Playwright 1.58.2**: E2E tests on Chromium with simulated camera (101 tests)
   - CPU/GPU filter smoke tests, stacking via presets
   - WebGL context loss and automatic Canvas2D fallback
   - Memory leak detection via CDP (heap metrics)
   - FPS validation per filter (threshold ≥ 15 FPS on SwiftShader)
-- **ESLint 9.18.0**: Linting with typescript-eslint
-- **Prettier 3.2.0**: Automatic code formatting
+- **ESLint 10.0.3**: Linting with typescript-eslint
+- **Prettier 3.8.1**: Automatic code formatting
 - **MarkdownLint**: Markdown file validation
 - **Husky + lint-staged**: Git hooks for pre-commit validation
 - **GitHub Actions**: CI/CD with automated validation pipeline
@@ -591,19 +681,19 @@ e2e/                         # Playwright E2E tests
 
 This project was developed with artificial intelligence assistance:
 
-- **AI Model**: Claude Sonnet 4.5 (Anthropic)
+- **AI Model**: Claude Sonnet 4.6 (Anthropic)
 - **Methodology**: [BMAD-method](https://github.com/bmad-code-org/BMAD-METHOD) v6.0.0-alpha.23
 - **Agent**: Quick Flow Solo Dev (Barry) - End-to-end autonomous development
 
 The AI generated:
 
 - Complete project architecture (strict TypeScript, zero-allocation patterns)
-- 21 real-time video filters with Canvas 2D optimizations
-- Unit tests (131 tests, 100% filter coverage)
+- 22 real-time video filters with Canvas 2D optimizations
+- Unit tests (536 tests, 100% filter coverage)
 - CI/CD validation pipeline (type-check, lint, format, tests)
 - Technical and user-facing documentation
 
-The code follows strict standards: TypeScript 5.3 strict mode, ESLint zero warnings, Prettier formatting, and 30-120 FPS performance on 1080p streams.
+The code follows strict standards: TypeScript 5.9 strict mode, ESLint zero warnings, Prettier formatting, and 30-120 FPS performance on 1080p streams.
 
 ### 📄 License
 

@@ -16,6 +16,7 @@ import type { StoredSettings } from "./types";
 import { Toast } from "./utils/Toast";
 import { WebGLFilterBase } from "./filters/webgl/WebGLFilterBase";
 import { BlurFilterWebGL } from "./filters/webgl/BlurFilterWebGL";
+import { BlackWhiteFilterWebGL } from "./filters/webgl/BlackWhiteFilterWebGL";
 import { SepiaFilterWebGL } from "./filters/webgl/SepiaFilterWebGL";
 import { InvertFilterWebGL } from "./filters/webgl/InvertFilterWebGL";
 import { VignetteFilterWebGL } from "./filters/webgl/VignetteFilterWebGL";
@@ -53,6 +54,7 @@ import { VHSFilter } from "./filters/VHSFilter";
 import { SepiaFilter } from "./filters/SepiaFilter";
 import { SobelRainbowFilter } from "./filters/SobelRainbowFilter";
 import { BlurFilter } from "./filters/BlurFilter";
+import { BlackWhiteFilter } from "./filters/BlackWhiteFilter";
 import { ChromaticAberrationFilter } from "./filters/ChromaticAberrationFilter";
 import { ThermalFilter } from "./filters/ThermalFilter";
 import { ComicBookFilter } from "./filters/ComicBookFilter";
@@ -99,6 +101,7 @@ class App {
       ["none", new NoneFilter()],
       ["ascii", new AsciiFilter()],
       ["blur", new BlurFilter()],
+      ["bw", new BlackWhiteFilter()],
       ["chromatic", new ChromaticAberrationFilter()],
       ["comicbook", new ComicBookFilter()],
       ["crt", new CRTFilter()],
@@ -277,6 +280,7 @@ class App {
         // Register lazy WebGL filter factories (avoids exceeding browser context limit)
         // Filters are instantiated on-demand only when GPU mode is enabled
         this.webglFilterFactories.set("blur", () => new BlurFilterWebGL());
+        this.webglFilterFactories.set("bw", () => new BlackWhiteFilterWebGL());
         this.webglFilterFactories.set("sepia", () => new SepiaFilterWebGL());
         this.webglFilterFactories.set("invert", () => new InvertFilterWebGL());
         this.webglFilterFactories.set(
@@ -990,7 +994,15 @@ class App {
 
     if (helpEl !== null) {
       if (helpText.length > 0) {
-        helpEl.innerHTML = helpText;
+        // Build DOM safely instead of innerHTML — helpText may contain <br> from i18n
+        helpEl.textContent = "";
+        const parts = helpText.split("<br>");
+        for (let i = 0; i < parts.length; i++) {
+          if (i > 0) {
+            helpEl.appendChild(document.createElement("br"));
+          }
+          helpEl.appendChild(document.createTextNode(parts[i] ?? ""));
+        }
         helpEl.style.display = "block";
       } else {
         helpEl.style.display = "none";
@@ -1026,12 +1038,21 @@ class App {
 }
 
 // Start the application when DOM is loaded
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", () => {
+function initApp(): void {
+  try {
     new App();
-  });
+  } catch (error) {
+    console.error(
+      "Failed to initialize app",
+      error instanceof Error ? error.message : String(error)
+    );
+  }
+}
+
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initApp);
 } else {
-  new App();
+  initApp();
 }
 
 export {};

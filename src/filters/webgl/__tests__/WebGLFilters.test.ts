@@ -31,6 +31,7 @@ import { GlitchFilterWebGL } from "../GlitchFilterWebGL";
 import { OilPaintingFilterWebGL } from "../OilPaintingFilterWebGL";
 import { DepthOfFieldFilterWebGL } from "../DepthOfFieldFilterWebGL";
 import { MotionDetectionFilterWebGL } from "../MotionDetectionFilterWebGL";
+import { BlackWhiteFilterWebGL } from "../BlackWhiteFilterWebGL";
 
 // Helper to create test ImageData
 function createTestImageData(width = 4, height = 4): ImageData {
@@ -787,6 +788,54 @@ describe("MotionDetectionFilterWebGL", () => {
   });
 });
 
+// ===== BlackWhiteFilterWebGL =====
+
+describe("BlackWhiteFilterWebGL", () => {
+  it("should construct without throwing", () => {
+    expect(() => new BlackWhiteFilterWebGL()).not.toThrow();
+  });
+
+  it("should return correct default parameters", () => {
+    const filter = new BlackWhiteFilterWebGL();
+    expect(filter.getDefaultParameters()).toEqual({
+      thresholdMode: 0,
+      threshold: 128,
+      ditheringMode: 0,
+    });
+  });
+
+  it("should clamp threshold to [0, 255] and floor", () => {
+    const filter = new BlackWhiteFilterWebGL();
+    filter.setParameters({ threshold: -10 });
+    filter.setParameters({ threshold: 300 });
+    filter.setParameters({ threshold: 100.9 });
+  });
+
+  it("should clamp thresholdMode to [0, 2] and floor", () => {
+    const filter = new BlackWhiteFilterWebGL();
+    filter.setParameters({ thresholdMode: -1 });
+    filter.setParameters({ thresholdMode: 5 });
+    filter.setParameters({ thresholdMode: 1.9 });
+  });
+
+  it("should clamp ditheringMode to [0, 4] and floor", () => {
+    const filter = new BlackWhiteFilterWebGL();
+    filter.setParameters({ ditheringMode: -1 });
+    filter.setParameters({ ditheringMode: 6 });
+    filter.setParameters({ ditheringMode: 2.7 });
+  });
+
+  it("should throw on apply without WebGL context", () => {
+    const filter = new BlackWhiteFilterWebGL();
+    expect(() => filter.apply(createTestImageData())).toThrow();
+  });
+
+  it("should cleanup safely", () => {
+    const filter = new BlackWhiteFilterWebGL();
+    expect(() => filter.cleanup()).not.toThrow();
+  });
+});
+
 // ===== Cross-cutting concerns =====
 
 describe("WebGL Filters - shared behavior", () => {
@@ -812,6 +861,7 @@ describe("WebGL Filters - shared behavior", () => {
       new OilPaintingFilterWebGL(),
       new DepthOfFieldFilterWebGL(),
       new MotionDetectionFilterWebGL(),
+      new BlackWhiteFilterWebGL(),
     ];
 
     for (const filter of filters) {
@@ -842,6 +892,7 @@ describe("WebGL Filters - shared behavior", () => {
       OilPaintingFilterWebGL,
       DepthOfFieldFilterWebGL,
       MotionDetectionFilterWebGL,
+      BlackWhiteFilterWebGL,
     ];
 
     for (const Ctor of constructors) {
@@ -871,6 +922,7 @@ describe("WebGL Filters - shared behavior", () => {
       new OilPaintingFilterWebGL(),
       new DepthOfFieldFilterWebGL(),
       new MotionDetectionFilterWebGL(),
+      new BlackWhiteFilterWebGL(),
     ];
 
     for (const filter of filters) {
@@ -897,6 +949,7 @@ describe("WebGL Filters - shared behavior", () => {
       new OilPaintingFilterWebGL(),
       new DepthOfFieldFilterWebGL(),
       new MotionDetectionFilterWebGL(),
+      new BlackWhiteFilterWebGL(),
     ];
 
     for (const filter of filters) {
