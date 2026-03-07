@@ -71,9 +71,9 @@ describe("I18n", () => {
     expect(t.filters.none).toBe("None");
   });
 
-  it("should have all 21 filter translations in both languages", () => {
+  it("should have all 22 filter translations in both languages", () => {
     const filterKeys = Object.keys(translations.fr.filters);
-    expect(filterKeys).toHaveLength(21);
+    expect(filterKeys).toHaveLength(22);
 
     for (const key of filterKeys) {
       const frValue =

@@ -1,10 +1,11 @@
 import { expect, type Page } from "@playwright/test";
 
-/** All 21 CPU filter types */
+/** All 22 CPU filter types */
 const ALL_FILTER_TYPES = [
   "none",
   "ascii",
   "blur",
+  "bw",
   "chromatic",
   "comicbook",
   "crt",
@@ -25,7 +26,7 @@ const ALL_FILTER_TYPES = [
   "vignette",
 ] as const;
 
-/** All 20 GPU-capable filter types (excludes "none") */
+/** All 21 GPU-capable filter types (excludes "none") */
 const WEBGL_FILTER_TYPES = ALL_FILTER_TYPES.filter((f) => f !== "none");
 
 export function getFilterTypes(): string[] {

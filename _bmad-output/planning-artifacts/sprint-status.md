@@ -76,7 +76,7 @@
 
 | Story | Title | Status | Tech Spec |
 |-------|-------|--------|-----------|
-| 7.1 | Black & White Filter (CPU + WebGL) | 🔄 Todo | V7 |
+| 7.1 | Black & White Filter (CPU + WebGL) | � Ready-for-dev | V7 |
 
 ---
 

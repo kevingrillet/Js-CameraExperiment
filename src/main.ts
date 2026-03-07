@@ -16,6 +16,7 @@ import type { StoredSettings } from "./types";
 import { Toast } from "./utils/Toast";
 import { WebGLFilterBase } from "./filters/webgl/WebGLFilterBase";
 import { BlurFilterWebGL } from "./filters/webgl/BlurFilterWebGL";
+import { BlackWhiteFilterWebGL } from "./filters/webgl/BlackWhiteFilterWebGL";
 import { SepiaFilterWebGL } from "./filters/webgl/SepiaFilterWebGL";
 import { InvertFilterWebGL } from "./filters/webgl/InvertFilterWebGL";
 import { VignetteFilterWebGL } from "./filters/webgl/VignetteFilterWebGL";
@@ -53,6 +54,7 @@ import { VHSFilter } from "./filters/VHSFilter";
 import { SepiaFilter } from "./filters/SepiaFilter";
 import { SobelRainbowFilter } from "./filters/SobelRainbowFilter";
 import { BlurFilter } from "./filters/BlurFilter";
+import { BlackWhiteFilter } from "./filters/BlackWhiteFilter";
 import { ChromaticAberrationFilter } from "./filters/ChromaticAberrationFilter";
 import { ThermalFilter } from "./filters/ThermalFilter";
 import { ComicBookFilter } from "./filters/ComicBookFilter";
@@ -99,6 +101,7 @@ class App {
       ["none", new NoneFilter()],
       ["ascii", new AsciiFilter()],
       ["blur", new BlurFilter()],
+      ["bw", new BlackWhiteFilter()],
       ["chromatic", new ChromaticAberrationFilter()],
       ["comicbook", new ComicBookFilter()],
       ["crt", new CRTFilter()],
@@ -277,6 +280,7 @@ class App {
         // Register lazy WebGL filter factories (avoids exceeding browser context limit)
         // Filters are instantiated on-demand only when GPU mode is enabled
         this.webglFilterFactories.set("blur", () => new BlurFilterWebGL());
+        this.webglFilterFactories.set("bw", () => new BlackWhiteFilterWebGL());
         this.webglFilterFactories.set("sepia", () => new SepiaFilterWebGL());
         this.webglFilterFactories.set("invert", () => new InvertFilterWebGL());
         this.webglFilterFactories.set(
