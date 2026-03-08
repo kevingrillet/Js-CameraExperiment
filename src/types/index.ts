@@ -309,9 +309,31 @@ export const FILTER_PARAM_DEFS = {
     glitchMaxDuration: { min: 2, max: 10, step: 1, default: 5 },
   },
   bw: {
-    thresholdMode: { min: 0, max: 2, step: 1, default: 0 },
+    ditheringMode: {
+      min: 0,
+      max: 4,
+      step: 1,
+      default: 0,
+      options: [
+        { value: 0, labelKey: "ditheringModeNone" },
+        { value: 1, labelKey: "ditheringModeBayer2" },
+        { value: 2, labelKey: "ditheringModeBayer4" },
+        { value: 3, labelKey: "ditheringModeBayer8" },
+        { value: 4, labelKey: "ditheringModeBayer16" },
+      ],
+    },
+    thresholdMode: {
+      min: 0,
+      max: 2,
+      step: 1,
+      default: 0,
+      options: [
+        { value: 0, labelKey: "thresholdModeAmount" },
+        { value: 1, labelKey: "thresholdModeRandom" },
+        { value: 2, labelKey: "thresholdModeBlueNoise" },
+      ],
+    },
     threshold: { min: 0, max: 255, step: 1, default: 128 },
-    ditheringMode: { min: 0, max: 4, step: 1, default: 0 },
   },
 } as const;
 

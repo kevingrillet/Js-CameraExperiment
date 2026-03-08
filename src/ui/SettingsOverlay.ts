@@ -462,10 +462,12 @@ export class SettingsOverlay {
     label.textContent = t.filterParameters.title;
     settingGroup.appendChild(label);
 
-    // Create a slider for each parameter
+    // Create a control for each parameter (slider or dropdown)
     Object.entries(paramDefs).forEach(([paramName, paramDef]) => {
       const sliderContainer = document.createElement("div");
       sliderContainer.className = "parameter-slider";
+      sliderContainer.dataset["filter"] = String(filterType);
+      sliderContainer.dataset["param"] = paramName;
 
       const paramTranslation =
         t.filterParameters[paramName as keyof typeof t.filterParameters];
@@ -475,46 +477,102 @@ export class SettingsOverlay {
           : paramName;
 
       const sliderLabel = document.createElement("label");
-      sliderLabel.textContent = `${paramLabel}: ${(paramDef as { default: number }).default}`;
       sliderLabel.className = "parameter-label";
 
-      const slider = document.createElement("input");
-      slider.type = "range";
-      slider.min = String((paramDef as { min: number }).min);
-      slider.max = String((paramDef as { max: number }).max);
-      slider.step = String((paramDef as { step: number }).step);
-      // M4 FIX - Use tracked current value instead of always showing defaults
-      const currentValues = this.currentFilterParamsMap.get(filterType);
-      const currentValue =
-        currentValues?.[paramName] ?? (paramDef as { default: number }).default;
-      slider.value = String(currentValue);
-      slider.className = "setting-control parameter-range";
-      slider.dataset["paramName"] = paramName;
+      // Check if paramDef has options (render select) or not (render slider)
+      const options = (
+        paramDef as { options?: readonly { value: number; labelKey: string }[] }
+      ).options;
+      if (options !== undefined) {
+        // Render as <select> dropdown
+        sliderLabel.textContent = paramLabel;
 
-      // Update initial label with current value
-      sliderLabel.textContent = `${paramLabel}: ${Number(currentValue).toFixed(2)}`;
+        const select = document.createElement("select");
+        select.className = "setting-control parameter-select";
+        select.dataset["paramName"] = paramName;
 
-      // Update label on slider change
-      slider.addEventListener("input", (e) => {
-        const target = e.target as HTMLInputElement;
-        const value = Number(target.value);
-        sliderLabel.textContent = `${paramLabel}: ${value.toFixed(2)}`;
-        this.callbacks.onFilterParameterChanged(filterType, paramName, value);
+        options.forEach((opt) => {
+          const option = document.createElement("option");
+          option.value = String(opt.value);
+          const optTranslation =
+            t.filterParameters[opt.labelKey as keyof typeof t.filterParameters];
+          option.textContent =
+            optTranslation !== undefined && optTranslation.length > 0
+              ? optTranslation
+              : opt.labelKey;
+          select.appendChild(option);
+        });
 
-        // Sync advanced modal slider
-        this.advancedModal.updateSliderValue(filterType, paramName, value);
-      });
+        // M4 FIX - Use tracked current value instead of always showing defaults
+        const currentValues = this.currentFilterParamsMap.get(filterType);
+        const currentValue =
+          currentValues?.[paramName] ??
+          (paramDef as { default: number }).default;
+        select.value = String(currentValue);
 
-      sliderContainer.appendChild(sliderLabel);
-      sliderContainer.appendChild(slider);
+        // Update on change
+        select.addEventListener("change", () => {
+          const value = Number(select.value);
+          this.callbacks.onFilterParameterChanged(filterType, paramName, value);
+
+          // Sync advanced modal
+          this.advancedModal.updateSliderValue(filterType, paramName, value);
+
+          // Update BW param visibility if this is a BW filter param
+          if (filterType === "bw") {
+            this.updateBWContextualVisibility();
+          }
+        });
+
+        sliderContainer.appendChild(sliderLabel);
+        sliderContainer.appendChild(select);
+      } else {
+        // Render as <input type="range"> slider (existing behavior)
+        // M4 FIX - Use tracked current value instead of always showing defaults
+        const currentValues = this.currentFilterParamsMap.get(filterType);
+        const currentValue =
+          currentValues?.[paramName] ??
+          (paramDef as { default: number }).default;
+
+        sliderLabel.textContent = `${paramLabel}: ${Number(currentValue).toFixed(2)}`;
+
+        const slider = document.createElement("input");
+        slider.type = "range";
+        slider.min = String((paramDef as { min: number }).min);
+        slider.max = String((paramDef as { max: number }).max);
+        slider.step = String((paramDef as { step: number }).step);
+        slider.value = String(currentValue);
+        slider.className = "setting-control parameter-range";
+        slider.dataset["paramName"] = paramName;
+
+        // Update label on slider change
+        slider.addEventListener("input", (e) => {
+          const target = e.target as HTMLInputElement;
+          const value = Number(target.value);
+          sliderLabel.textContent = `${paramLabel}: ${value.toFixed(2)}`;
+          this.callbacks.onFilterParameterChanged(filterType, paramName, value);
+
+          // Sync advanced modal slider
+          this.advancedModal.updateSliderValue(filterType, paramName, value);
+        });
+
+        sliderContainer.appendChild(sliderLabel);
+        sliderContainer.appendChild(slider);
+      }
+
       settingGroup.appendChild(sliderContainer);
     });
 
     container.appendChild(settingGroup);
+
+    // Set initial BW param visibility
+    if (filterType === "bw") {
+      this.updateBWContextualVisibility();
+    }
   }
 
   /**
-   * Sync slider value in main panel when changed from advanced modal
+   * Sync slider/select value in main panel when changed from advanced modal
    */
   private syncSliderValue(paramName: string, value: number): void {
     const container = this.panel.querySelector(
@@ -524,9 +582,10 @@ export class SettingsOverlay {
       return;
     }
 
-    const slider = container.querySelector(
+    // Try input[type=range] first
+    const slider = container.querySelector<HTMLInputElement>(
       `input[data-param-name="${paramName}"]`
-    ) as HTMLInputElement;
+    );
 
     if (slider !== null) {
       slider.value = String(value);
@@ -540,6 +599,73 @@ export class SettingsOverlay {
             ? paramTranslation
             : paramName;
         label.textContent = `${paramLabel}: ${value.toFixed(2)}`;
+      }
+    } else {
+      // Try select element
+      const select = container.querySelector<HTMLSelectElement>(
+        `select[data-param-name="${paramName}"]`
+      );
+
+      if (select !== null) {
+        select.value = String(value);
+      }
+    }
+
+    // Re-evaluate BW param visibility if needed
+    if (paramName === "thresholdMode" || paramName === "ditheringMode") {
+      this.updateBWContextualVisibility();
+    }
+  }
+
+  /**
+   * Update BW filter parameter visibility in the contextual (main panel) controls
+   */
+  private updateBWContextualVisibility(): void {
+    const container = this.panel.querySelector<HTMLElement>(
+      "#filter-parameters-container"
+    );
+    if (container === null) {
+      return;
+    }
+
+    const ditheringSelect = container.querySelector<HTMLSelectElement>(
+      `select[data-param-name="ditheringMode"]`
+    );
+    const thresholdModeContainer = container.querySelector(
+      `.parameter-slider[data-param="thresholdMode"]`
+    );
+    const thresholdContainer = container.querySelector(
+      `.parameter-slider[data-param="threshold"]`
+    );
+    const thresholdModeSelect = container.querySelector<HTMLSelectElement>(
+      `select[data-param-name="thresholdMode"]`
+    );
+
+    const ditheringValue =
+      ditheringSelect !== null ? Number(ditheringSelect.value) : 0;
+    const thresholdModeValue =
+      thresholdModeSelect !== null ? Number(thresholdModeSelect.value) : 0;
+
+    if (ditheringValue !== 0) {
+      if (thresholdModeContainer !== null) {
+        thresholdModeContainer.classList.add("param-hidden");
+      }
+      if (thresholdContainer !== null) {
+        thresholdContainer.classList.add("param-hidden");
+      }
+    } else if (thresholdModeValue !== 0) {
+      if (thresholdModeContainer !== null) {
+        thresholdModeContainer.classList.remove("param-hidden");
+      }
+      if (thresholdContainer !== null) {
+        thresholdContainer.classList.add("param-hidden");
+      }
+    } else {
+      if (thresholdModeContainer !== null) {
+        thresholdModeContainer.classList.remove("param-hidden");
+      }
+      if (thresholdContainer !== null) {
+        thresholdContainer.classList.remove("param-hidden");
       }
     }
   }
@@ -647,18 +773,24 @@ export class SettingsOverlay {
       title.textContent = t.settings;
     }
 
-    // Update labels (only those that are direct label elements, not containing inputs)
-    const labels = this.panel.querySelectorAll(
-      ".setting-group > label:not(:has(input))"
+    // Update labels using targeted selectors instead of fragile indices
+    const videoSourceLabel = this.panel.querySelector(
+      ".setting-group:has(#source-select) > label"
     );
-    if (labels[0] !== undefined) {
-      labels[0].textContent = t.videoSource;
+    if (videoSourceLabel !== null) {
+      videoSourceLabel.textContent = t.videoSource;
     }
-    if (labels[1] !== undefined) {
-      labels[1].textContent = t.filter;
+    const filterLabel = this.panel.querySelector(
+      ".setting-group:has(#filter-select) > label"
+    );
+    if (filterLabel !== null) {
+      filterLabel.textContent = t.filter;
     }
-    if (labels[2] !== undefined) {
-      labels[2].textContent = t.aspectRatio;
+    const aspectRatioLabel = this.panel.querySelector(
+      ".setting-group:has(.radio-group) > label"
+    );
+    if (aspectRatioLabel !== null) {
+      aspectRatioLabel.textContent = t.aspectRatio;
     }
 
     // Update buttons
@@ -811,6 +943,18 @@ export class SettingsOverlay {
       // Restore selection
       filterSelect.value = currentValue;
     }
+
+    // Re-render filter stack UI with new translations
+    this.filterStackUI.updateStack(this.currentStack);
+
+    // Re-render contextual parameter sliders/dropdowns with new translations
+    this.renderContextualSliders(this.currentFilter);
+
+    // Update advanced settings modal translations
+    this.advancedModal.refreshLanguage();
+
+    // Update active language flag to match current language
+    this.updateActiveFlag(I18n.getCurrentLanguage());
   }
 
   /**

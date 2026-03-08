@@ -14,9 +14,13 @@
     "**/dist": true
   },
   "chat.tools.terminal.autoApprove": {
+    "git rev-parse": true,
+    "mv": true,
+    "npx eslint": true,
     "npx lint-staged": true,
     "npx npm-check-updates": true,
     "npx playwright": true,
+    "npx tsc": true,
     "npx vitest": true
   }
 }

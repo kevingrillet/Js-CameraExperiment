@@ -105,6 +105,18 @@ export interface Translations {
     threshold: string;
     thresholdMode: string;
     ditheringMode: string;
+    thresholdModeAmount: string;
+    thresholdModeRandom: string;
+    thresholdModeBlueNoise: string;
+    ditheringModeNone: string;
+    ditheringModeBayer2: string;
+    ditheringModeBayer4: string;
+    ditheringModeBayer8: string;
+    ditheringModeBayer16: string;
+    expandAll: string;
+    collapseAll: string;
+    close: string;
+    reset: string;
   };
   errors: {
     accessDenied: string;
@@ -229,6 +241,18 @@ export const translations: Record<Language, Translations> = {
       threshold: "Seuil de luminance",
       thresholdMode: "Mode de seuil",
       ditheringMode: "Mode de tramage",
+      thresholdModeAmount: "Valeur fixe",
+      thresholdModeRandom: "Aléatoire",
+      thresholdModeBlueNoise: "Bruit bleu",
+      ditheringModeNone: "Aucun",
+      ditheringModeBayer2: "Bayer 2×2",
+      ditheringModeBayer4: "Bayer 4×4",
+      ditheringModeBayer8: "Bayer 8×8",
+      ditheringModeBayer16: "Bayer 16×16",
+      expandAll: "Tout déplier",
+      collapseAll: "Tout replier",
+      close: "Fermer",
+      reset: "Réinitialiser",
     },
     errors: {
       accessDenied:
@@ -356,6 +380,18 @@ export const translations: Record<Language, Translations> = {
       threshold: "Luminance Threshold",
       thresholdMode: "Threshold Mode",
       ditheringMode: "Dithering Mode",
+      thresholdModeAmount: "Fixed Amount",
+      thresholdModeRandom: "Random",
+      thresholdModeBlueNoise: "Blue Noise",
+      ditheringModeNone: "None",
+      ditheringModeBayer2: "Bayer 2×2",
+      ditheringModeBayer4: "Bayer 4×4",
+      ditheringModeBayer8: "Bayer 8×8",
+      ditheringModeBayer16: "Bayer 16×16",
+      expandAll: "Expand All",
+      collapseAll: "Collapse All",
+      close: "Close",
+      reset: "Reset",
     },
     errors: {
       accessDenied:

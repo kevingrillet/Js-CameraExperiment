@@ -34,15 +34,16 @@ export class AdvancedSettingsModal {
     overlay.className = "advanced-settings-overlay";
     overlay.style.display = "none";
 
+    const t = I18n.t();
     overlay.innerHTML = `
       <div class="advanced-settings-modal">
         <div class="modal-header">
-          <h2>${I18n.t().filterParameters.advancedSettings}</h2>
+          <h2>${t.filterParameters.advancedSettings}</h2>
           <div style="display: flex; gap: 8px; margin-left: auto; margin-right: 16px;">
-            <button class="expand-all-button" title="Expand All" style="padding: 4px 12px; font-size: 12px; background: rgba(102, 126, 234, 0.2); border: 1px solid #667eea; color: #667eea; border-radius: 4px; cursor: pointer;">Expand All</button>
-            <button class="collapse-all-button" title="Collapse All" style="padding: 4px 12px; font-size: 12px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: #fff; border-radius: 4px; cursor: pointer;">Collapse All</button>
+            <button class="expand-all-button" title="${t.filterParameters.expandAll}" style="padding: 4px 12px; font-size: 12px; background: rgba(102, 126, 234, 0.2); border: 1px solid #667eea; color: #667eea; border-radius: 4px; cursor: pointer;">${t.filterParameters.expandAll}</button>
+            <button class="collapse-all-button" title="${t.filterParameters.collapseAll}" style="padding: 4px 12px; font-size: 12px; background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: #fff; border-radius: 4px; cursor: pointer;">${t.filterParameters.collapseAll}</button>
           </div>
-          <button class="modal-close" title="Close">×</button>
+          <button class="modal-close" title="${t.filterParameters.close}">×</button>
         </div>
         <div class="modal-body">
           <div id="filter-accordion"></div>
@@ -68,11 +69,17 @@ export class AdvancedSettingsModal {
 
     accordion.innerHTML = "";
 
-    // Get all filters with parameters
-
-    const filters = Object.keys(FILTER_PARAM_DEFS) as Array<
-      keyof typeof FILTER_PARAM_DEFS
-    >;
+    // Get all filters with parameters and sort alphabetically by translated name
+    const sortT = I18n.t();
+    const sortLocale = I18n.getCurrentLanguage();
+    const filters = (
+      Object.keys(FILTER_PARAM_DEFS) as Array<keyof typeof FILTER_PARAM_DEFS>
+    ).sort((a, b) =>
+      sortT.filters[a as FilterType].localeCompare(
+        sortT.filters[b as FilterType],
+        sortLocale
+      )
+    );
 
     filters.forEach((filterType) => {
       const paramDefs = FILTER_PARAM_DEFS[filterType];
@@ -88,16 +95,18 @@ export class AdvancedSettingsModal {
       header.className = "accordion-header";
       header.innerHTML = `
         <span class="filter-name">${this.formatFilterName(String(filterType))}</span>
-        <button class="reset-button" data-filter="${String(filterType)}">Reset</button>
+        <button class="reset-button" data-filter="${String(filterType)}">${I18n.t().filterParameters.reset}</button>
       `;
 
-      // Content (sliders)
+      // Content (sliders and selects)
       const content = document.createElement("div");
       content.className = "accordion-content";
 
       Object.entries(paramDefs).forEach(([paramName, paramDef]) => {
         const sliderContainer = document.createElement("div");
         sliderContainer.className = "parameter-slider";
+        sliderContainer.dataset["filter"] = String(filterType);
+        sliderContainer.dataset["param"] = paramName;
 
         // H5 FIX - Use i18n translations for param labels
         const t = I18n.t();
@@ -109,42 +118,113 @@ export class AdvancedSettingsModal {
             : paramName;
 
         const sliderLabel = document.createElement("label");
-        sliderLabel.textContent = `${paramLabel}: ${(paramDef as { default: number }).default}`;
         sliderLabel.className = "parameter-label";
 
-        const slider = document.createElement("input");
-        slider.type = "range";
-        slider.min = String((paramDef as { min: number }).min);
-        slider.max = String((paramDef as { max: number }).max);
-        slider.step = String((paramDef as { step: number }).step);
-        slider.value = String((paramDef as { default: number }).default);
-        slider.className = "parameter-range";
-        slider.dataset["filter"] = String(filterType);
-        slider.dataset["param"] = paramName;
-
-        // Update label on slider change
-        slider.addEventListener("input", (e) => {
-          const target = e.target as HTMLInputElement;
-          const value = Number(target.value);
-          sliderLabel.textContent = `${paramLabel}: ${value.toFixed(2)}`;
-
-          // Store current value
-          if (!this.currentFilterValues.has(filterType as FilterType)) {
-            this.currentFilterValues.set(filterType as FilterType, {});
+        // Check if paramDef has options (render select) or not (render slider)
+        const options = (
+          paramDef as {
+            options?: readonly { value: number; labelKey: string }[];
           }
-          this.currentFilterValues.get(filterType as FilterType)![paramName] =
-            value;
+        ).options;
+        if (options !== undefined) {
+          // Render as <select> dropdown
+          sliderLabel.textContent = paramLabel;
 
-          // Callback to update filter
-          this.callbacks.onParameterChanged(
-            filterType as FilterType,
-            paramName,
-            value
+          const select = document.createElement("select");
+          select.className = "parameter-select";
+          select.dataset["filter"] = String(filterType);
+          select.dataset["param"] = paramName;
+
+          options.forEach((opt) => {
+            const option = document.createElement("option");
+            option.value = String(opt.value);
+            const optTranslation =
+              t.filterParameters[
+                opt.labelKey as keyof typeof t.filterParameters
+              ];
+            option.textContent =
+              optTranslation !== undefined && optTranslation.length > 0
+                ? optTranslation
+                : opt.labelKey;
+            select.appendChild(option);
+          });
+
+          const currentSelectVal = this.currentFilterValues.get(
+            filterType as FilterType
+          )?.[paramName];
+          select.value = String(
+            currentSelectVal ?? (paramDef as { default: number }).default
           );
-        });
 
-        sliderContainer.appendChild(sliderLabel);
-        sliderContainer.appendChild(slider);
+          // Update on change
+          select.addEventListener("change", () => {
+            const value = Number(select.value);
+
+            // Store current value
+            if (!this.currentFilterValues.has(filterType as FilterType)) {
+              this.currentFilterValues.set(filterType as FilterType, {});
+            }
+            this.currentFilterValues.get(filterType as FilterType)![paramName] =
+              value;
+
+            // Callback to update filter
+            this.callbacks.onParameterChanged(
+              filterType as FilterType,
+              paramName,
+              value
+            );
+
+            // Update BW param visibility if this is a BW filter param
+            if (filterType === "bw") {
+              this.updateBWParamVisibility();
+            }
+          });
+
+          sliderContainer.appendChild(sliderLabel);
+          sliderContainer.appendChild(select);
+        } else {
+          // Render as <input type="range"> slider (existing behavior)
+          const currentSliderVal =
+            this.currentFilterValues.get(filterType as FilterType)?.[
+              paramName
+            ] ?? (paramDef as { default: number }).default;
+          sliderLabel.textContent = `${paramLabel}: ${currentSliderVal}`;
+
+          const slider = document.createElement("input");
+          slider.type = "range";
+          slider.min = String((paramDef as { min: number }).min);
+          slider.max = String((paramDef as { max: number }).max);
+          slider.step = String((paramDef as { step: number }).step);
+          slider.value = String(currentSliderVal);
+          slider.className = "parameter-range";
+          slider.dataset["filter"] = String(filterType);
+          slider.dataset["param"] = paramName;
+
+          // Update label on slider change
+          slider.addEventListener("input", (e) => {
+            const target = e.target as HTMLInputElement;
+            const value = Number(target.value);
+            sliderLabel.textContent = `${paramLabel}: ${value.toFixed(2)}`;
+
+            // Store current value
+            if (!this.currentFilterValues.has(filterType as FilterType)) {
+              this.currentFilterValues.set(filterType as FilterType, {});
+            }
+            this.currentFilterValues.get(filterType as FilterType)![paramName] =
+              value;
+
+            // Callback to update filter
+            this.callbacks.onParameterChanged(
+              filterType as FilterType,
+              paramName,
+              value
+            );
+          });
+
+          sliderContainer.appendChild(sliderLabel);
+          sliderContainer.appendChild(slider);
+        }
+
         content.appendChild(sliderContainer);
       });
 
@@ -160,6 +240,11 @@ export class AdvancedSettingsModal {
       section.appendChild(header);
       section.appendChild(content);
       accordion.appendChild(section);
+
+      // After rendering BW section, set initial visibility
+      if (filterType === "bw") {
+        this.updateBWParamVisibility();
+      }
     });
   }
 
@@ -167,6 +252,55 @@ export class AdvancedSettingsModal {
     // M3 FIX - Use i18n translations instead of hardcoded English names
     const t = I18n.t();
     return t.filters[filterType as FilterType];
+  }
+
+  /**
+   * Update BW filter parameter visibility based on current thresholdMode and ditheringMode values
+   */
+  private updateBWParamVisibility(): void {
+    const ditheringSelect = this.modal.querySelector<HTMLSelectElement>(
+      `select[data-filter="bw"][data-param="ditheringMode"]`
+    );
+    const thresholdModeContainer = this.modal.querySelector(
+      `.parameter-slider[data-filter="bw"][data-param="thresholdMode"]`
+    );
+    const thresholdContainer = this.modal.querySelector(
+      `.parameter-slider[data-filter="bw"][data-param="threshold"]`
+    );
+    const thresholdModeSelect = this.modal.querySelector<HTMLSelectElement>(
+      `select[data-filter="bw"][data-param="thresholdMode"]`
+    );
+
+    const ditheringValue =
+      ditheringSelect !== null ? Number(ditheringSelect.value) : 0;
+    const thresholdModeValue =
+      thresholdModeSelect !== null ? Number(thresholdModeSelect.value) : 0;
+
+    if (ditheringValue !== 0) {
+      // Dithering active: hide thresholdMode and threshold
+      if (thresholdModeContainer !== null) {
+        thresholdModeContainer.classList.add("param-hidden");
+      }
+      if (thresholdContainer !== null) {
+        thresholdContainer.classList.add("param-hidden");
+      }
+    } else if (thresholdModeValue !== 0) {
+      // thresholdMode is not "Amount": show thresholdMode, hide threshold
+      if (thresholdModeContainer !== null) {
+        thresholdModeContainer.classList.remove("param-hidden");
+      }
+      if (thresholdContainer !== null) {
+        thresholdContainer.classList.add("param-hidden");
+      }
+    } else {
+      // All defaults: show everything
+      if (thresholdModeContainer !== null) {
+        thresholdModeContainer.classList.remove("param-hidden");
+      }
+      if (thresholdContainer !== null) {
+        thresholdContainer.classList.remove("param-hidden");
+      }
+    }
   }
 
   private setupEventListeners(): void {
@@ -275,7 +409,43 @@ export class AdvancedSettingsModal {
       }
     });
 
+    // Reset all selects to default values
+    const selects = this.modal.querySelectorAll(
+      `select[data-filter="${String(filterType)}"]`
+    );
+    selects.forEach((selectElement) => {
+      const select = selectElement as HTMLSelectElement;
+      const paramName = select.dataset["param"];
+      if (paramName !== undefined && paramName in paramDefs) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
+        const paramDef = paramDefs[paramName as keyof typeof paramDefs] as any;
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        select.value = String(paramDef.default as number);
+
+        // Update stored value
+        if (!this.currentFilterValues.has(filterType)) {
+          this.currentFilterValues.set(filterType, {});
+        }
+        // prettier-ignore
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+        this.currentFilterValues.get(filterType)![paramName] = paramDef.default as number;
+
+        // Callback to update filter
+        this.callbacks.onParameterChanged(
+          filterType,
+          paramName,
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+          paramDef.default as number
+        );
+      }
+    });
+
     this.callbacks.onResetFilter(filterType);
+
+    // Re-evaluate BW param visibility after reset
+    if (filterType === "bw") {
+      this.updateBWParamVisibility();
+    }
   }
 
   /**
@@ -293,16 +463,17 @@ export class AdvancedSettingsModal {
   }
 
   /**
-   * Update a slider value programmatically (e.g., when changed from main panel)
+   * Update a slider or select value programmatically (e.g., when changed from main panel)
    */
   updateSliderValue(
     filterType: FilterType,
     paramName: string,
     value: number
   ): void {
-    const slider = this.modal.querySelector(
+    // Try input[type=range] first
+    const slider = this.modal.querySelector<HTMLInputElement>(
       `input[data-filter="${filterType}"][data-param="${paramName}"]`
-    ) as HTMLInputElement;
+    );
 
     if (slider !== null) {
       slider.value = String(value);
@@ -318,12 +489,59 @@ export class AdvancedSettingsModal {
             : paramName;
         label.textContent = `${paramLabel}: ${value.toFixed(2)}`;
       }
+    } else {
+      // Try select element
+      const select = this.modal.querySelector<HTMLSelectElement>(
+        `select[data-filter="${filterType}"][data-param="${paramName}"]`
+      );
 
-      // Update stored value
-      if (!this.currentFilterValues.has(filterType)) {
-        this.currentFilterValues.set(filterType, {});
+      if (select !== null) {
+        select.value = String(value);
       }
-      this.currentFilterValues.get(filterType)![paramName] = value;
     }
+
+    // Update stored value
+    if (!this.currentFilterValues.has(filterType)) {
+      this.currentFilterValues.set(filterType, {});
+    }
+    this.currentFilterValues.get(filterType)![paramName] = value;
+
+    // Re-evaluate BW param visibility if needed
+    if (
+      filterType === "bw" &&
+      (paramName === "thresholdMode" || paramName === "ditheringMode")
+    ) {
+      this.updateBWParamVisibility();
+    }
+  }
+
+  /**
+   * Refresh all modal text after a language change
+   */
+  refreshLanguage(): void {
+    const t = I18n.t();
+
+    // Update header texts
+    const title = this.modal.querySelector(".modal-header h2");
+    if (title !== null) {
+      title.textContent = t.filterParameters.advancedSettings;
+    }
+    const expandBtn = this.modal.querySelector(".expand-all-button");
+    if (expandBtn !== null) {
+      expandBtn.textContent = t.filterParameters.expandAll;
+      expandBtn.setAttribute("title", t.filterParameters.expandAll);
+    }
+    const collapseBtn = this.modal.querySelector(".collapse-all-button");
+    if (collapseBtn !== null) {
+      collapseBtn.textContent = t.filterParameters.collapseAll;
+      collapseBtn.setAttribute("title", t.filterParameters.collapseAll);
+    }
+    const closeBtn = this.modal.querySelector(".modal-close");
+    if (closeBtn !== null) {
+      closeBtn.setAttribute("title", t.filterParameters.close);
+    }
+
+    // Re-render accordion content with new translations
+    this.renderAccordion();
   }
 }
