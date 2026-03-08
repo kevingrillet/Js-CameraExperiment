@@ -4,7 +4,7 @@ export default defineConfig({
   testDir: "./e2e",
   forbidOnly: true,
   retries: 0,
-  workers: 1,
+  workers: process.env["CI"] !== undefined ? 1 : undefined,
   reporter: [["html"], ["list"]],
   timeout: 90_000,
 

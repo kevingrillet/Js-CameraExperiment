@@ -1,6 +1,10 @@
 _bmad
 _bmad-output
 .github
+docs
 node_modules
 dist
+coverage
+playwright-report
+test-results
 code-coverage-results.md

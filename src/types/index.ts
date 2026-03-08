@@ -5,6 +5,7 @@
 export type FilterType =
   | "none"
   | "blur"
+  | "bw"
   | "chromatic"
   | "comicbook"
   | "dof"
@@ -47,6 +48,7 @@ export const AVAILABLE_FILTERS: FilterMetadata[] = [
   { type: "none" },
   { type: "ascii" },
   { type: "blur" },
+  { type: "bw" },
   { type: "chromatic" },
   { type: "comicbook" },
   { type: "crt" },
@@ -81,6 +83,13 @@ export interface AsciiFilterParams {
 export interface BlurFilterParams {
   type: "blur";
   kernelSize: number; // 3-15, default 5
+}
+
+export interface BlackWhiteFilterParams {
+  type: "bw";
+  thresholdMode: number; // 0=amount | 1=random | 2=bluerandom, default 0
+  threshold: number; // 0–255, default 128
+  ditheringMode: number; // 0=none | 1=bayer2 | 2=bayer4 | 3=bayer8 | 4=bayer16, default 0
 }
 
 export interface ChromaticAberrationFilterParams {
@@ -197,7 +206,8 @@ export type FilterParameters =
   | OilPaintingFilterParams
   | RotoscopeFilterParams
   | VHSFilterParams
-  | GlitchFilterParams;
+  | GlitchFilterParams
+  | BlackWhiteFilterParams;
 
 // Mapping FilterType to its parameter interface
 export type FilterParametersMap = {
@@ -218,6 +228,7 @@ export type FilterParametersMap = {
   rotoscope: RotoscopeFilterParams;
   vhs: VHSFilterParams;
   glitch: GlitchFilterParams;
+  bw: BlackWhiteFilterParams;
   // Filters without parameters (not in map)
   // none, invert, sepia, thermal
 };
@@ -296,6 +307,33 @@ export const FILTER_PARAM_DEFS = {
     blockCorruptionFrequency: { min: 0, max: 0.2, step: 0.05, default: 0.05 },
     glitchMinDuration: { min: 1, max: 5, step: 1, default: 2 },
     glitchMaxDuration: { min: 2, max: 10, step: 1, default: 5 },
+  },
+  bw: {
+    ditheringMode: {
+      min: 0,
+      max: 4,
+      step: 1,
+      default: 0,
+      options: [
+        { value: 0, labelKey: "ditheringModeNone" },
+        { value: 1, labelKey: "ditheringModeBayer2" },
+        { value: 2, labelKey: "ditheringModeBayer4" },
+        { value: 3, labelKey: "ditheringModeBayer8" },
+        { value: 4, labelKey: "ditheringModeBayer16" },
+      ],
+    },
+    thresholdMode: {
+      min: 0,
+      max: 2,
+      step: 1,
+      default: 0,
+      options: [
+        { value: 0, labelKey: "thresholdModeAmount" },
+        { value: 1, labelKey: "thresholdModeRandom" },
+        { value: 2, labelKey: "thresholdModeBlueNoise" },
+      ],
+    },
+    threshold: { min: 0, max: 255, step: 1, default: 128 },
   },
 } as const;
 

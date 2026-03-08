@@ -1,7 +1,7 @@
 ---
 project_name: "Js-CameraExperiment"
 user_name: "Kevin"
-date: "2026-02-28"
+date: "2026-03-07"
 sections_completed:
   ["technology_stack", "language_rules", "framework_rules", "testing_rules", "quality_rules", "workflow_rules", "anti_patterns"]
 status: "complete"
@@ -21,10 +21,10 @@ _This file contains critical rules and patterns that AI agents must follow when 
 - **Vite 7.3.1** — dev server on port 3000, base path `/Js-CameraExperiment/`
 - **Vitest 4.0.18** — happy-dom environment, globals enabled, v8 coverage
 - **Playwright 1.58.2** — Chromium-only E2E tests with fake camera feed, SwiftShader WebGL
-- **ESLint 10.0.2** — flat config with `typescript-eslint` type-checked rules
+- **ESLint 10.0.3** — flat config with `typescript-eslint` type-checked rules
 - **Prettier 3.8.1** — double quotes, 2-space indent, trailing comma es5, LF endings
 - **Husky 9.1.7 + lint-staged 16.3.0** — pre-commit: lint-staged + full test run
-- **markdownlint-cli 0.47.0** — MD013/MD024/MD025 disabled
+- **markdownlint-cli 0.48.0** — MD013/MD024/MD025 disabled
 - **Browser APIs only** — Canvas2D, WebGL2, MediaStream, LocalStorage (zero runtime npm deps)
 
 ## Critical Implementation Rules
@@ -105,7 +105,7 @@ _This file contains critical rules and patterns that AI agents must follow when 
 - **`validate` is the full check** — runs `type-check && test:run && lint && lint:md && format:check` in sequence; must pass clean before merge
 - **E2E verification on story/tech-spec completion** — after implementing a story or tech-spec, run `npm run test:e2e` to verify no E2E regressions; if the change affects filters, UI controls, presets, WebGL, or the rendering pipeline, update or add E2E tests accordingly
 - **When to update E2E tests** — new filter: add to `getFilterTypes()`/`getWebGLFilterTypes()` arrays in `filter-helpers.ts`; new preset: add to preset test arrays in `filters-cpu.spec.ts` and `filters-gpu.spec.ts`; new UI control: add helper in `filter-helpers.ts`; changed `__TEST_APP__` hook: update all specs using it
-- **E2E completion checklist** — (1) `npm run validate` passes (unit tests + lint + format), (2) `npm run test:e2e` passes (95 E2E tests), (3) both `tsconfig.json` and `e2e/tsconfig.json` type-check clean
+- **E2E completion checklist** — (1) `npm run validate` passes (unit tests + lint + format), (2) `npm run test:e2e` passes (101 E2E tests), (3) both `tsconfig.json` and `e2e/tsconfig.json` type-check clean
 - **Build is type-check first** — `tsc && vite build`; TypeScript errors block bundling
 - **GitHub Pages base path** — Vite base set to `/Js-CameraExperiment/`; all asset paths must be relative
 - **Single HTML file** — all CSS is inline in `index.html`; no CSS modules, no separate stylesheets
@@ -144,7 +144,4 @@ _This file contains critical rules and patterns that AI agents must follow when 
 - Review quarterly for outdated rules
 - Remove rules that become obvious over time
 
-_Last Updated: 2026-02-28_
-
-- **No `instanceof` on ImageData** — causes strict-boolean-expressions error; rely on TypeScript type system instead
-- **`StoredSettings.version` must be `6`** — `SettingsStorage.load()` rejects any other version; increment only when schema changes
+_Last Updated: 2026-03-07_

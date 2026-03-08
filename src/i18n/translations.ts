@@ -45,6 +45,7 @@ export interface Translations {
     none: string;
     ascii: string;
     blur: string;
+    bw: string;
     chromatic: string;
     comicbook: string;
     crt: string;
@@ -101,6 +102,21 @@ export interface Translations {
     glitchMaxDuration: string;
     autoRotateEnabled: string;
     rotationSpeed: string;
+    threshold: string;
+    thresholdMode: string;
+    ditheringMode: string;
+    thresholdModeAmount: string;
+    thresholdModeRandom: string;
+    thresholdModeBlueNoise: string;
+    ditheringModeNone: string;
+    ditheringModeBayer2: string;
+    ditheringModeBayer4: string;
+    ditheringModeBayer8: string;
+    ditheringModeBayer16: string;
+    expandAll: string;
+    collapseAll: string;
+    close: string;
+    reset: string;
   };
   errors: {
     accessDenied: string;
@@ -166,6 +182,7 @@ export const translations: Record<Language, Translations> = {
       none: "Aucun",
       ascii: "Art ASCII",
       blur: "Flou",
+      bw: "Noir & Blanc pur",
       chromatic: "Aberration chromatique",
       comicbook: "Comic Book / Halftone",
       crt: "CRT",
@@ -221,6 +238,21 @@ export const translations: Record<Language, Translations> = {
       blockCorruptionFrequency: "Fréquence de corruption de blocs",
       glitchMinDuration: "Durée minimale de glitch (frames)",
       glitchMaxDuration: "Durée maximale de glitch (frames)",
+      threshold: "Seuil de luminance",
+      thresholdMode: "Mode de seuil",
+      ditheringMode: "Mode de tramage",
+      thresholdModeAmount: "Valeur fixe",
+      thresholdModeRandom: "Aléatoire",
+      thresholdModeBlueNoise: "Bruit bleu",
+      ditheringModeNone: "Aucun",
+      ditheringModeBayer2: "Bayer 2×2",
+      ditheringModeBayer4: "Bayer 4×4",
+      ditheringModeBayer8: "Bayer 8×8",
+      ditheringModeBayer16: "Bayer 16×16",
+      expandAll: "Tout déplier",
+      collapseAll: "Tout replier",
+      close: "Fermer",
+      reset: "Réinitialiser",
     },
     errors: {
       accessDenied:
@@ -289,6 +321,7 @@ export const translations: Record<Language, Translations> = {
       none: "None",
       ascii: "ASCII Art",
       blur: "Blur",
+      bw: "Pure Black & White",
       chromatic: "Chromatic Aberration",
       comicbook: "Comic Book / Halftone",
       crt: "CRT",
@@ -344,6 +377,21 @@ export const translations: Record<Language, Translations> = {
       blockCorruptionFrequency: "Block Corruption Frequency",
       glitchMinDuration: "Glitch Min Duration (frames)",
       glitchMaxDuration: "Glitch Max Duration (frames)",
+      threshold: "Luminance Threshold",
+      thresholdMode: "Threshold Mode",
+      ditheringMode: "Dithering Mode",
+      thresholdModeAmount: "Fixed Amount",
+      thresholdModeRandom: "Random",
+      thresholdModeBlueNoise: "Blue Noise",
+      ditheringModeNone: "None",
+      ditheringModeBayer2: "Bayer 2×2",
+      ditheringModeBayer4: "Bayer 4×4",
+      ditheringModeBayer8: "Bayer 8×8",
+      ditheringModeBayer16: "Bayer 16×16",
+      expandAll: "Expand All",
+      collapseAll: "Collapse All",
+      close: "Close",
+      reset: "Reset",
     },
     errors: {
       accessDenied:
